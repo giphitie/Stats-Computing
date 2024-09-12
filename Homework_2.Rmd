@@ -1,0 +1,33 @@
+---
+title: "SDS 5531 Homework 1"
+author: "Gifty Osei"
+date: "2024-09-11"
+output: pdf_document
+---
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+**Remark**: If you would like to insert images for your handwritten part into this file, please refer to [this article](https://poldham.github.io/minute_website/images.html).
+
+
+# Problem 1. Box-Muller transformation
+
+The Box-Muller transformation method simulates random numbers from $N(0,1)$ as follows.
+
+- Step 1: Generate $U_1$ and $U_2$ i.i.d. from $U(0,1)$.
+- Step 2: Let $X_1 = \sqrt{-2\log U_1}cos(2\pi U_2)$ and  $X_2 = \sqrt{-2\log U_1}sin(2\pi U_2)$. 
+
+Establish the theoretical validity of the method by proving the following results.
+
+
+
+```{r}
+
+```
+
+
