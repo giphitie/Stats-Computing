@@ -7,8 +7,9 @@ output: pdf_document
 
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, out.width = "50%", fig.align = "center"}
 knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
 ```
 
 
@@ -24,10 +25,340 @@ The Box-Muller transformation method simulates random numbers from $N(0,1)$ as f
 
 Establish the theoretical validity of the method by proving the following results.
 
+1. (15 points) Use the change-of-variable formula to derive that  $X_1$ and $X_2$ are two independent draws from $N(0,1)$.
+
 
 
 ```{r}
 
 ```
 
+
+
+## Problem 2. Generate Cauchy random numbers
+
+The Cauchy distribution is Student's $t$-distribution with 1 degree of freedom. 
+
+1. (10 points) Derive an algorithm to simulate random numbers from the Cauchy distribution using the inverse cdf approach. (Hint: Show the Cauchy cdf is $F(x) = \tan^{-1}(x)/\pi$.)
+
+## Solution:
+
+
+
+2. (10 points) Alternatively, one can simulate from the Cauchy distribution by computing the ratio $\frac{X_1}{X_2}$, where $X_1$ and $X_2$ are two independent $N(0,1)$ random variables. Explain why this works.
+
+## Solution:
+
+
+
+3. (20 points) Implement these two methods in R (or Python). Then compare their computing time and efficiency by simulating $n$ Cauchy random numbers. (Choose $n$ to be reasonably large to be able to tell the time difference in running the two methods. The exact choice of $n$ depends on your hardware and implementation.) 
+
+
+## Solution:
+
+
+
+```{r}
+# 1. Implement the two methods. (Make sure your implementation is efficient. For example, avoid loops if possible.)
+
+# 2. Simulate n Cauchy random numbers and compare the execution time of the two methods. (You can find the execution time using the R function system.time(). )
+
+# 3. For both methods, draw the empirical cdf of your simulated numbers and see how close it is to the true Cauchy cdf (impose all three curves on the same plot). The following code shows how you may impose three curves on the same plot, but it needs some modification for your use. 
+
+# Part 1
+# Using the Inverse CDF to generate Cauchy random numbers
+inv_cdf_cauc <- function(n) {
+# Generate n uniform random numbers between 0 and 1
+  u <- runif(n)  
+# Use the inverse CDF of the Cauchy distribution to simulate x 
+  x <- tan(pi * (u - 0.5))  
+  return(x) # return x
+}
+
+
+# Part 2
+
+# Ratio of 2 standard Normals to generate Cauchy RV.
+ratio_of_norms_cauc <- function(n) {
+# Generate n standard normal random numbers as x1
+  X1 <- rnorm(n)
+  
+# Generate n standard normal random numbers
+  X2 <- rnorm(n) 
+# Take the ratio of the two  
+  x <- X1 / X2 
+  
+  return(x) # return x
+}
+
+
+## Comparing time to compute
+library(microbenchmark)
+
+# set a reasonable n
+n <- 10000 
+
+# Compare the two methods using microbenchmark
+
+benchmark_results <- microbenchmark(
+  inverse_cdf = inv_cdf_cauc(n),
+  ratio_of_stan_normals = ratio_of_norms_cauc(n),
+  times = 10  # Run each method 10 times
+)
+
+## Summarise
+summary(benchmark_results)
+
+print(benchmark_results)
+
+## We can see that inverse CDF is faster
+
+
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+library(ggplot2)
+library(purrr)
+
+
+## Plotting All 3 plots (Cauchy, Ratio, Inverse CDF)
+
+## Empirical Values from inverse cdf ad ratio
+
+inverse_cdf = inv_cdf_cauc(1000)
+
+ratio_of_stan_normals = ratio_of_norms_cauc(1000)
+
+cauchy_samples <- list(
+  inverse = inv_cdf_cauc(1000),
+  ratio = ratio_of_norms_cauc(1000)
+)
+
+
+x_values <- seq(-5, 5)
+
+# Calculate the true Cauchy CDF values
+true_cdf <- pcauchy(x_values)
+
+
+## Create Data 
+
+empirical_cdfs <- map(cauchy_samples, function(samples) {
+  data.frame(
+    x = sort(samples),
+    cdf = seq(1/n, 1, length.out = n)
+  )
+})
+
+data_true <- data.frame(x = x_values, cdf = true_cdf)
+
+#data_inverse <- data.frame(x = empirical_cdfs$inverse, cdf = seq(1/n, 1, length.out = n))
+
+#data_ratio <- data.frame(x = empirical_cdfs$ratio, cdf = seq(1/n, 1, length.out = n))
+
+
+ggplot() +
+  # True Cauchy CDF
+  geom_line(data = data_true, aes(x = x, y = cdf), color = "blue", size = 1, linetype = "solid", alpha = 0.5) +
+  # CDF from inverse CDF method
+  geom_line(data = empirical_cdfs$inverse , aes(x = x, y = cdf), color = "red", size = 1, linetype = "dashed", alpha = 0.8) +
+  # CDF from ratio of normals method
+  geom_line(data =  empirical_cdfs$ratio, aes(x = x, y = cdf), color = "green", size = 1, linetype = "dotted", alpha = 0.8) +   # Restrict x-axis range
+  xlim(-10, 10) +
+  
+    ggtitle("Comparison of Simulated Cauchy Distribution CDFs")+
+    xlab("x")+
+    ylab("CDF")+
+    labs(caption = "Blue: True Cauchy CDF,
+         Red: Inverse CDF Method, Green: Ratio of Normals Method"
+  ) + theme_bw()
+
+```
+
+
+
+
+
+```{r, echo=FALSE, eval=FALSE,include=FALSE}
+
+
+ecdf1 <- inverse_cdf
+ecdf2 <- ratio_of_stan_normals
+
+# create a data set containing the range you wish to use
+d <- data.frame(x = c(-3,3))
+
+# create a list of calls to `stat_function` with the colours you wish to use
+
+ll <- Map(f  = stat_function, colour = c('red', 'green'),
+          fun = list(ecdf1, ecdf2), geom = 'step')
+
+ggplot(data = d, aes(x = x)) + ll + geom_function(fun = pcauchy )
+
+```
+
+
+
+## Problem 3. Accept-Reject sampling
+
+Consider simulating from $N(0,1)$ using the accept-reject sampling. Pretend you do not know the normalizing constant of the pdf, so $f(x) = e^{-\frac{x^2}{2}}$. First, consider using the standard Cauchy distribution as an envelope distribution. Let $g(x) = \frac{1}{1+x^2}$. (Note we have dropped the normalizing constant in the Cauchy pdf.)
+
+1. (10 points) Show that the ratio $$\frac{f(x)}{g(x)} = (1+x^2)e^{-\frac{x^2}{2}} \leq \frac{2}{\sqrt{e}},$$ with the equality attained at $x=\pm 1$.
+
+## Solution
+
+
+2. (15 points) Show that the probability of acceptance is $\sqrt{\frac{e}{2\pi}} \approx 0.66$. Also  run an empirical evaluation of the probability of acceptance.
+
+```{r}
+# 1. implement your algorithm and record the number of acceptances or rejections
+# 2. Simulate n=1000 random numbers, and find the empirical proportion of acceptances or rejections
+
+
+
+set.seed(300)
+
+# Number of simulations
+n <- 1000
+
+# Generate n samples from the standard Cauchy distribution using vectorized operations
+x <- rcauchy(n)
+
+# Define the target density function (unnormalized standard normal)
+f_x <- exp(-x^2 / 2)
+
+# Define the envelope density function (unnormalized standard Cauchy)
+g_x <- 1 / (1 + x^2)
+
+# Calculate the ratio M
+M <- 2 / sqrt(exp(1))  
+
+# Acceptance probability calculation
+acceptance_prob <- f_x / g_x
+
+# Generate uniform random numbers to compare 
+u <- runif(n)
+
+# Accept if u <= acceptance_prob / M 
+
+accepted <- u <= (acceptance_prob / M)
+
+# Calculate the empirical proportion of acceptances
+acceptance_rate <- mean(accepted)
+
+# Print results
+cat("Empirical proportion of acceptances:", acceptance_rate, "\n")
+#cat("Empirical proportion of rejections:", 1 - acceptance_rate, "\n")
+
+
+```
+
+3. (10 points) Now, consider using a scaled Cauchy distribution as the envelope distribution, i.e. $g_\sigma (x) = \frac{1}{\pi\sigma (1+\frac{x^2}{\sigma^2})}.$ Find the upper bound for $\frac{f(x)}{g_\sigma(x)}$ and the value of $\sigma$ that minimizes this bound.
+
+## Solution:
+
+```{r, eval=FALSE, include=FALSE, echo=FALSE}
+# Define the function f(σ) = σ^2 - 2 * exp(-(2 - σ^2) / 2)
+f <- function(sigma) {
+  sigma^2 - 2 * exp(-(2 - sigma^2) / 2)
+}
+
+result <- uniroot(f, c(-0.5, 2))
+
+# Output the result
+cat("The value of σ that solves the equation is approximately:", root, "\n")
+
+```
+
+
+## Including Images
+
+```{r}
+knitr::include_graphics("images/fig31_adjust_nodes.png")
+```
+
+## Including PDF
+
+
+```{r label, out.width = "85%", fig.cap = "caption"}
+
+include_graphics("path-to-your-image.pdf") 
+
+```
+
+
+
+### 
+```{r}
+
+# Load required libraries
+library(ggplot2)
+library(purrr)
+
+# Inverse CDF method to generate Cauchy random numbers
+inverse_cdf_cauchy <- function(n) {
+  u <- runif(n)  # Generate n uniform random numbers between 0 and 1
+  x <- tan(pi * (u - 0.5))  # Apply the inverse CDF of the Cauchy distribution
+  return(x)
+}
+
+# Ratio of Normals method to generate Cauchy random numbers
+ratio_of_normals_cauchy <- function(n) {
+  X1 <- rnorm(n)  # Generate n standard normal random numbers
+  X2 <- rnorm(n)  # Generate n standard normal random numbers
+  x <- X1 / X2    # Take the ratio of the two
+  return(x)
+}
+
+# Number of random samples
+n <- 10000
+
+# Generate Cauchy samples
+cauchy_samples <- list(
+  inverse = inverse_cdf_cauchy(n),
+  ratio = ratio_of_normals_cauchy(n)
+)
+
+# Create a sequence of x values for plotting the true CDF
+x_values <- seq(-10, 10, length.out = 1000)
+
+# Calculate the true Cauchy CDF values using the built-in pcauchy function
+true_cdf_values <- pcauchy(x_values)
+
+# Create a data frame for the true CDF
+true_cdf_df <- data.frame(x = x_values, cdf = true_cdf_values)
+
+# Create a data frame for empirical CDFs using ecdf
+empirical_cdfs <- map(cauchy_samples, function(samples) {
+  empirical_cdf_fn <- ecdf(samples)  # Create the empirical CDF function
+  data.frame(
+    x = sort(samples),
+    cdf = empirical_cdf_fn(sort(samples))  # Apply the empirical CDF function
+  )
+})
+
+# Now create a ggplot that maps the true CDF, inverse CDF, and ratio of normals
+
+ggplot() +
+  # True Cauchy CDF using pcauchy
+  geom_line(data = true_cdf_df, aes(x = x, y = cdf), color = "blue", size = 1, linetype = "solid", alpha = 0.8) +
+  
+  # Inverse CDF Method
+  geom_line(data = empirical_cdfs$inverse, aes(x = x, y = cdf), color = "red", size = 1, linetype = "dashed", alpha = 0.8) +
+  
+  # Ratio of Normals Method
+  geom_line(data = empirical_cdfs$ratio, aes(x = x, y = cdf), color = "green", size = 1, linetype = "dotted", alpha = 0.8) +
+  
+  # Labels and title
+  labs(
+    title = "Comparison of Simulated Cauchy Distribution CDFs",
+    x = "x",
+    y = "CDF",
+    caption = "Blue: True Cauchy CDF (pcauchy), Red: Inverse CDF Method, Green: Ratio of Normals Method"
+  ) +
+  theme_minimal()
+
+
+```
 
