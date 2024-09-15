@@ -7,9 +7,12 @@ output: pdf_document
 
 ---
 
-```{r setup, include=FALSE, out.width = "50%", fig.align = "center"}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, include=FALSE, out.width = "100%", fig.align='default'}
+knitr::opts_chunk$set(echo = TRUE, tidy = TRUE)
 library(knitr)
+library(purrr)
+library(ggplot2)
+library(kableExtra)
 ```
 
 
@@ -28,12 +31,32 @@ Establish the theoretical validity of the method by proving the following result
 1. (15 points) Use the change-of-variable formula to derive that  $X_1$ and $X_2$ are two independent draws from $N(0,1)$.
 
 
+```{r part1, out.width = "60%", fig.cap = " Part 1", message=FALSE, warning=FALSE, echo=TRUE,fig.show='hold'}
 
-```{r}
+knitr::include_graphics(c("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q1.pdf","D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q1b.pdf")) 
 
 ```
 
 
+
+
+\newpage
+
+2. (10 points) Show that the polar coordinates $r^2 = X_1^2+X_2^2\sim \chi^2_2$, hence $e^{-\frac{r^2}{2}}\sim U(0,1)$, and $\theta = \arctan \frac{X_1}{X_2}\sim U(0,2\pi)$. 
+
+### Solution:
+
+```{r, out.width = "60%", fig.cap = " Part 1", message=FALSE, warning=FALSE, echo=T,fig.show='hold'}
+
+knitr::include_graphics(c("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q1c.pdf",
+                          "D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q1d.pdf")) 
+
+```
+
+
+
+
+\newpage
 
 ## Problem 2. Generate Cauchy random numbers
 
@@ -41,29 +64,31 @@ The Cauchy distribution is Student's $t$-distribution with 1 degree of freedom.
 
 1. (10 points) Derive an algorithm to simulate random numbers from the Cauchy distribution using the inverse cdf approach. (Hint: Show the Cauchy cdf is $F(x) = \tan^{-1}(x)/\pi$.)
 
-## Solution:
+### Solution:
+
+```{r , out.width = "60%", fig.cap = " Problem 2", message=FALSE, warning=FALSE, echo=TRUE,fig.show='hold'}
+
+knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q2a.pdf") 
+
+```
 
 
 
 2. (10 points) Alternatively, one can simulate from the Cauchy distribution by computing the ratio $\frac{X_1}{X_2}$, where $X_1$ and $X_2$ are two independent $N(0,1)$ random variables. Explain why this works.
 
-## Solution:
+### Solution:
 
 
 
 3. (20 points) Implement these two methods in R (or Python). Then compare their computing time and efficiency by simulating $n$ Cauchy random numbers. (Choose $n$ to be reasonably large to be able to tell the time difference in running the two methods. The exact choice of $n$ depends on your hardware and implementation.) 
 
 
-## Solution:
+### Solution:
 
 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # 1. Implement the two methods. (Make sure your implementation is efficient. For example, avoid loops if possible.)
-
-# 2. Simulate n Cauchy random numbers and compare the execution time of the two methods. (You can find the execution time using the R function system.time(). )
-
-# 3. For both methods, draw the empirical cdf of your simulated numbers and see how close it is to the true Cauchy cdf (impose all three curves on the same plot). The following code shows how you may impose three curves on the same plot, but it needs some modification for your use. 
 
 # Part 1
 # Using the Inverse CDF to generate Cauchy random numbers
@@ -75,6 +100,8 @@ inv_cdf_cauc <- function(n) {
   return(x) # return x
 }
 
+
+# 2. Simulate n Cauchy random numbers and compare the execution time of the two methods. (You can find the execution time using the R function system.time(). )
 
 # Part 2
 
@@ -92,13 +119,15 @@ ratio_of_norms_cauc <- function(n) {
 }
 
 
+# Part 3
+
 ## Comparing time to compute
 library(microbenchmark)
 
 # set a reasonable n
 n <- 10000 
 
-# Compare the two methods using microbenchmark
+# Compare the two methods using micro benchmark
 
 benchmark_results <- microbenchmark(
   inverse_cdf = inv_cdf_cauc(n),
@@ -106,37 +135,40 @@ benchmark_results <- microbenchmark(
   times = 10  # Run each method 10 times
 )
 
-## Summarise
-summary(benchmark_results)
+## Summarize
+kable(summary(benchmark_results), caption = "Time to Compute",
+      latex_options = c("hold_position", "striped" ))
 
-print(benchmark_results)
+# print(benchmark_results)
 
 ## We can see that inverse CDF is faster
 
 
 ```
 
+\begin{center} Table 1:  From the descriptive summary, we can see that inverse cdf is doing much better in time to compute and generate the cauchy random variables
+\end{center}
 
-```{r, warning=FALSE, message=FALSE}
-library(ggplot2)
-library(purrr)
+```{r, warning=FALSE, message=FALSE, fig.cap= "Plot showing the true, inverse cdf and ratio of normals approach of simulating cauchy random number",  out.width = "85%"}
 
 
+
+# 3. For both methods, draw the empirical cdf of your simulated numbers and see how close it is to the true Cauchy cdf (impose all three curves on the same plot). The following code shows how you may impose three curves on the same plot, but it needs some modification for your use.
 ## Plotting All 3 plots (Cauchy, Ratio, Inverse CDF)
 
-## Empirical Values from inverse cdf ad ratio
+## Empirical Values from inverse cdf and ratio
 
-inverse_cdf = inv_cdf_cauc(1000)
+#inverse_cdf = inv_cdf_cauc(10000)
 
-ratio_of_stan_normals = ratio_of_norms_cauc(1000)
+#ratio_of_stan_normals = ratio_of_norms_cauc(10000)
 
 cauchy_samples <- list(
-  inverse = inv_cdf_cauc(1000),
-  ratio = ratio_of_norms_cauc(1000)
+  inverse = inv_cdf_cauc(10000),
+  ratio = ratio_of_norms_cauc(10000)
 )
 
 
-x_values <- seq(-5, 5)
+x_values <- seq(-5, 5, length.out = 10000)
 
 # Calculate the true Cauchy CDF values
 true_cdf <- pcauchy(x_values)
@@ -199,6 +231,7 @@ ggplot(data = d, aes(x = x)) + ll + geom_function(fun = pcauchy )
 ```
 
 
+\newpage
 
 ## Problem 3. Accept-Reject sampling
 
@@ -206,53 +239,57 @@ Consider simulating from $N(0,1)$ using the accept-reject sampling. Pretend you 
 
 1. (10 points) Show that the ratio $$\frac{f(x)}{g(x)} = (1+x^2)e^{-\frac{x^2}{2}} \leq \frac{2}{\sqrt{e}},$$ with the equality attained at $x=\pm 1$.
 
-## Solution
+### Solution:
 
 
 2. (15 points) Show that the probability of acceptance is $\sqrt{\frac{e}{2\pi}} \approx 0.66$. Also  run an empirical evaluation of the probability of acceptance.
 
-```{r}
+### Solution:
+
+```{r, warning=FALSE, message=FALSE}
 # 1. implement your algorithm and record the number of acceptances or rejections
 # 2. Simulate n=1000 random numbers, and find the empirical proportion of acceptances or rejections
-
-
 
 set.seed(300)
 
 # Number of simulations
-n <- 1000
+n <- 10000
 
 # Generate n samples from the standard Cauchy distribution using vectorized operations
 x <- rcauchy(n)
 
-# Define the target density function (unnormalized standard normal)
+# target (unnormalized standard normal)
 f_x <- exp(-x^2 / 2)
 
-# Define the envelope density function (unnormalized standard Cauchy)
+# envelope density (unnormalized standard Cauchy)
 g_x <- 1 / (1 + x^2)
 
-# Calculate the ratio M
+# ratio M
 M <- 2 / sqrt(exp(1))  
 
-# Acceptance probability calculation
+# Acceptance probability 
 acceptance_prob <- f_x / g_x
 
-# Generate uniform random numbers to compare 
+# simulate uniform random numbers for comparison 
 u <- runif(n)
 
-# Accept if u <= acceptance_prob / M 
+# Accept if u is less or equal to acceptance_prob / M 
 
 accepted <- u <= (acceptance_prob / M)
 
-# Calculate the empirical proportion of acceptances
+# empirical proportion of acceptances
 acceptance_rate <- mean(accepted)
 
 # Print results
-cat("Empirical proportion of acceptances:", acceptance_rate, "\n")
+#cat("Empirical proportion of acceptances:", acceptance_rate, "\n")
 #cat("Empirical proportion of rejections:", 1 - acceptance_rate, "\n")
 
 
 ```
+
+\begin{center} The Empirical proportion of acceptance is `r round(acceptance_rate,3)`  \end{center}
+
+
 
 3. (10 points) Now, consider using a scaled Cauchy distribution as the envelope distribution, i.e. $g_\sigma (x) = \frac{1}{\pi\sigma (1+\frac{x^2}{\sigma^2})}.$ Find the upper bound for $\frac{f(x)}{g_\sigma(x)}$ and the value of $\sigma$ that minimizes this bound.
 
@@ -274,23 +311,23 @@ cat("The value of σ that solves the equation is approximately:", root, "\n")
 
 ## Including Images
 
-```{r}
+```{r,eval=FALSE, echo=FALSE}
 knitr::include_graphics("images/fig31_adjust_nodes.png")
 ```
 
 ## Including PDF
 
 
-```{r label, out.width = "85%", fig.cap = "caption"}
+```{r label, out.width = "85%", fig.cap = "caption", eval=FALSE, echo=FALSE}
 
-include_graphics("path-to-your-image.pdf") 
+knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q1.pdf") 
 
 ```
 
 
 
 ### 
-```{r}
+```{r, eval=FALSE, include=FALSE, message=FALSE, warning=FALSE}
 
 # Load required libraries
 library(ggplot2)
