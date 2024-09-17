@@ -30,8 +30,9 @@ Establish the theoretical validity of the method by proving the following result
 
 1. (15 points) Use the change-of-variable formula to derive that  $X_1$ and $X_2$ are two independent draws from $N(0,1)$.
 
+### Solution:
 
-```{r, out.width = "65%", fig.cap = " Problem 1, Question 1", message=FALSE, warning=FALSE, echo=TRUE,fig.show='hold'}
+```{r, out.width = "60%", fig.cap = " Problem 1, Question 1", message=FALSE, warning=FALSE, echo=TRUE,fig.show='hold'}
 
 knitr::include_graphics(c("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q1.pdf",
                           "D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q1b.pdf")) 
@@ -148,7 +149,6 @@ kable(summary(benchmark_results), caption = "Time to Compute",
       latex_options = c("hold_position",
                         "striped" ))
 
-# print(benchmark_results)
 
 ## We can see that inverse CDF is faster
 
@@ -169,7 +169,7 @@ system.time(for (i in 1:N) ratio_of_norms_cauc(n))
 ```
 
 
-```{r, warning=FALSE, message=FALSE, fig.cap= "Plot showing the true, inverse cdf and ratio of normals approach of simulating cauchy random number",  out.width = "85%"}
+```{r, warning=FALSE, message=FALSE, fig.cap= "Plot showing the true, inverse cdf and ratio of normals approach of simulating cauchy random number. As n gets bigger over time, both simulation approach converges to the true cdf from a cauchy distribution.",  out.width = "85%"}
 
 
 
@@ -258,7 +258,7 @@ Consider simulating from $N(0,1)$ using the accept-reject sampling. Pretend you 
 
 ### Solution:
 
-```{r , out.width = "70%", fig.cap = " Problem 3, Question 1", message=FALSE, warning=FALSE, echo=TRUE,fig.show='hold'}
+```{r , out.width = "60%", fig.cap = " Problem 3, Question 1", message=FALSE, warning=FALSE, echo=TRUE,fig.show='hold'}
 
 knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q3a.pdf") 
 
@@ -311,14 +311,13 @@ accepted <- u <= (acceptance_prob / M)
 # empirical proportion of acceptances
 acceptance_rate <- mean(accepted)
 
-# Print results
-#cat("Empirical proportion of acceptances:", acceptance_rate, "\n")
-#cat("Empirical proportion of rejections:", 1 - acceptance_rate, "\n")
+# acceptance_rate gives the proportion of acceptance printed below 
+
 
 
 ```
 
-\begin{center} The Empirical proportion of acceptance is `r round(acceptance_rate,3)`  \end{center}
+\begin{center} Based on the simulation example above, we can show that the empirical proportion of acceptance for a unnormalized Standard Normal and Cauchy is `r round(acceptance_rate,3)`  \end{center}
 
 
 \newpage
@@ -326,7 +325,7 @@ acceptance_rate <- mean(accepted)
 
 ## Solution:
 
-```{r , out.width = "60%", fig.cap = " Problem 2", message=FALSE, warning=FALSE, echo=TRUE,fig.show='hold'}
+```{r , out.width = "55%", fig.cap = " Problem 3, Question 3", message=FALSE, warning=FALSE, echo=TRUE,fig.show='hold'}
 
 knitr::include_graphics(c("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q3c.pdf","D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q3d.pdf" ))
 
