@@ -1,0 +1,456 @@
+---
+title: "SDS 5531 Homework 2"
+author: "Gifty Osei"
+date: "2024-09-20"
+output: pdf_document
+---
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE)
+```
+
+
+**Remark**: If you would like to insert images for your handwritten part into this file, please refer to [this article](https://poldham.github.io/minute_website/images.html).
+
+
+# Problem 1. Multivariate Normal
+
+Suppose that $\mathbf{Z}$ follows a multivariate normal distribution $N(\mathbf{\mu},\Sigma)$. And a partition of $\mathbf{Z}$ is given as $$\mathbf{Z} = \left(\begin{matrix}\mathbf{X} \\ \mathbf{Y} \end{matrix}\right)$$ with corresponding partitions of the mean vector and covariance matrix given as $$\mathbf{\mu} = \left(\begin{matrix}\mathbf{\mu}_X \\ \mathbf{\mu}_Y \end{matrix}\right) \mbox{ and } \Sigma = \left(\begin{matrix}\Sigma_{XX} & \Sigma_{XY} \\ \Sigma_{XY}^T & \Sigma_{YY}\end{matrix}\right).$$ The multivariate normal theory  states that the conditional distribution of $\mathbf{X}|\mathbf{Y}=\mathbf{y}$ is a multivariate normal with mean $$\mathbf{\mu}_{X|Y}=\mathbf{\mu}_X+\Sigma_{XY}\Sigma_{YY}^{-1}(\mathbf{y}-\mathbf{\mu}_Y)$$ and covariance matrix $$\Sigma_{X|Y}=\Sigma_{XX}-\Sigma_{XY}\Sigma_{YY}^{-1}\Sigma_{XY}^T.$$ 
+
+
+
+1. Write an R function to simulate from the multivariate normal distribution $N(\mathbf{\mu}_{X|Y}, \Sigma_{X|Y})$, i.e. the conditional distribution of $\mathbf{X}|\mathbf{Y}=\mathbf{y}$, using the standard approach discussed in class using Cholesky decomposition. That is, generate $\mathbf{X} = \mathbf{\mu}_{X|Y}+\Sigma_{X|Y}^{1/2} N(0,I)$, where $\Sigma_{X|Y}^{1/2}$ is from the Cholesky decomposition of $\Sigma_{X|Y}$. The input of your function should include the sample size, $\mathbf{y}$, $\mathbf{\mu}$ and $\Sigma$.
+
+### Solution:
+
+```{r}
+# simulate from multivariate normal using Cholesky decomposition
+
+mvn_conditional <- function(n, y, mu, Sigma) {
+  # Determine dimensions
+  p <- length(mu)        # Total dimension
+  q <- length(y)         # Dimension of Y
+  k <- p - q             # Dimension of X
+  
+  # Partition mu
+  mu_X <- mu[1:k]
+  mu_Y <- mu[(k+1):p]
+  
+  # Partition Sigma
+  Sigma_XX <- Sigma[1:k, 1:k]
+  Sigma_XY <- Sigma[1:k, (k+1):p]
+  Sigma_YX <- Sigma[(k+1):p, 1:k]
+  Sigma_YY <- Sigma[(k+1):p, (k+1):p]
+  
+  # Compute the inverse of Sigma_YY
+  Sigma_YY_inv <- solve(Sigma_YY)
+  
+  # Compute the conditional mean
+  mu_cond <- mu_X + Sigma_XY %*% Sigma_YY_inv %*% (y - mu_Y)
+  
+  # Compute the conditional covariance matrix
+  Sigma_cond <- Sigma_XX - Sigma_XY %*% Sigma_YY_inv %*% Sigma_YX
+  
+  # Ensure the covariance matrix is symmetric
+  Sigma_cond <- (Sigma_cond + t(Sigma_cond)) / 2
+  
+  # Perform Cholesky decomposition
+  L <- chol(Sigma_cond)
+  
+  # Generate standard normal random variables
+  Z <- matrix(rnorm(n * k), nrow = n, ncol = k)
+  
+  # Generate samples from the conditional distribution
+  x_samples <- Z %*% t(L) + matrix(rep(mu_cond, each = n), nrow = n, byrow = TRUE)
+  
+  return(x_samples)
+}
+
+```
+
+
+```{r}
+# Define parameters
+n <- 1000
+mu <- c(1, 2, 3, 4)
+
+# Generate a positive definite covariance matrix
+C <- matrix(rnorm(16), nrow = 4)
+Sigma <- crossprod(C)  # Sigma = C^T * C, which is positive definite
+
+# Partition the mean vector and specify y
+y <- c(3.5, 4.5)  # Assuming the last two variables are Y
+
+# Simulate samples
+x_samples <- mvn_conditional (n, y, mu, Sigma)
+
+# View the first few samples
+head(x_samples)
+
+
+
+
+```
+
+
+
+
+
+
+
+
+2. An alternative approach proposed by Hoffman and Ribak (1991) runs differently. It first generates $$\mathbf{Z} = \left(\begin{matrix}\mathbf{X} \\ \mathbf{Y} \end{matrix}\right) \sim N(\mathbf{\mu},\Sigma)$$ and then get $$\mathbf{\tilde{X}}=\mathbf{X}+\Sigma_{XY}\Sigma^{-1}_{YY}(\mathbf{y}-\mathbf{\mu}_Y).$$ Then $\mathbf{\tilde{X}}$ is from $N(\mathbf{\mu}_{X|Y}, \Sigma_{X|Y})$. Justify the validity of this algorithm and give an R implementation. Next comment on its computational cost by comparing with the standard approach above. You can compare from both a theoretical and empirical perspective. For the empirical perspective, you may time your implementations of the two methods for a specific simulation with a relatively large sample size.
+
+### Solution:
+
+```{r}
+# simulate from multivariate normal using the Hoffman and Ribak method
+
+MVN_conditional_alternative <- function(n, y, mu, Sigma) {
+  # Determine dimensions
+  p <- length(mu)        # Total dimension
+  q <- length(y)         # Dimension of Y
+  k <- p - q             # Dimension of X
+  
+  # Partition mu
+  mu_X <- mu[1:k]
+  mu_Y <- mu[(k+1):p]
+  
+  # Partition Sigma
+  Sigma_XX <- Sigma[1:k, 1:k]
+  Sigma_XY <- Sigma[1:k, (k+1):p]
+  Sigma_YY <- Sigma[(k+1):p, (k+1):p]
+  
+  # Compute the inverse of Sigma_YY
+  Sigma_YY_inv <- solve(Sigma_YY)
+  
+  # Compute K = Sigma_XY * Sigma_YY_inv
+  K <- Sigma_XY %*% Sigma_YY_inv
+  
+  # Simulate Z = (X; Y) ~ N(mu, Sigma)
+  library(MASS)
+  Z <- mvrnorm(n, mu, Sigma)
+  X <- Z[, 1:k, drop = FALSE]
+  Y <- Z[, (k+1):p, drop = FALSE]
+  
+  # Adjust X
+  delta <- (matrix(y, nrow = n, ncol = q, byrow = TRUE) - Y) %*% t(K)
+  X_tilde <- X + delta
+  
+  return(X_tilde)
+}
+
+
+
+```
+
+### Example
+```{r}
+# Define parameters
+n <- 1000
+mu <- c(1, 2, 3, 4)
+# Generate a positive definite covariance matrix
+L <- matrix(rnorm(16), nrow = 4)
+Sigma <- crossprod(L)  # Sigma = L^T * L, which is positive definite
+
+y <- c(3.5, 4.5)
+
+# Simulate samples
+samples_alternative <- MVN_conditional_alternative(n, y, mu, Sigma)
+
+# View the first few samples
+head(samples_alternative)
+
+```
+### Comparison
+
+```{r}
+# comparison of the two methods
+library(microbenchmark)
+
+# Define parameters
+n <- 10000
+mu <- rep(0, 50)
+Sigma <- diag(50)
+y <- rep(0, 25)
+
+# Adjust dimensions
+k <- 25  # Dimension of X
+p <- length(mu)  # Total dimension
+
+# Generate a positive definite covariance matrix
+set.seed(123)
+A <- matrix(rnorm(p^2), nrow = p)
+Sigma <- crossprod(A)
+
+# Timing the two methods
+timing <- microbenchmark(
+  Method1 = mvn_conditional(n, y, mu, Sigma),
+  Method2 = MVN_conditional_alternative(n, y, mu, Sigma),
+  times = 10
+)
+
+print(timing)
+
+```
+
+
+
+## Problem 2. Rao-Blackwellization
+
+Consider Monte Carlo approximation to the mean of a negative binomial random variable $X\sim NB(r,p)$. (Note that the true value of the expectation is $\theta = E(X)=r(1-p)/p$.)
+
+1. Prove that a mixture representation of $NB(r,p)$ is  $X|Y=y\sim Poisson(y)$ and $Y\sim gamma(r,\frac{p}{1-p})$.
+
+### Solution:
+```{r, fig.cap="Problem 2, Question 1",out.width = "55%",fig.show='hold'}
+
+```
+
+
+
+
+2. Construct a Rao-Blackwellized Monte Carlo estimator of $\theta=E(X)$ using the auxiliary variable $Y$. Then check the empirical coverage of the 95\% confidence interval of $\theta$ based on simulated values of $X$ and $Y$ as the size of the simulated sample increases. In the simulation, use $r=2$ and $p=2/3$.
+
+
+### Solution:
+
+```{r}
+# First derive the form of the Rao-Blackwellized Monte Carlo estimator
+
+```
+
+
+```{r}
+# Next, write an R program to implement the simulation
+
+# Parameters
+r <- 2
+p <- 2 / 3
+lambda <- p / (1 - p)  # lambda = 2
+theta <- r * (1 - p) / p  # theta = 1
+z_alpha <- qnorm(0.975)  # 95% confidence interval critical value
+
+# Sample sizes and number of simulations
+n_values <- c(10, 20, 50, 100, 500, 1000)
+N <- 1000  # Number of simulations for each sample size
+
+# Function to perform simulations for a given sample size
+simulate_coverage <- function(n) {
+  # Simulate Y_i: N x n matrix
+  Y_matrix <- matrix(rgamma(N * n, shape = r, rate = lambda), nrow = N, ncol = n)
+  
+  # Simulate X_i given Y_i: X_i ~ Poisson(Y_i)
+  X_vector <- rpois(N * n, lambda = as.vector(Y_matrix))
+  X_matrix <- matrix(X_vector, nrow = N, ncol = n)
+  
+  # Compute estimators
+  theta_hat_X <- rowMeans(X_matrix)
+  theta_hat_RB <- rowMeans(Y_matrix)
+  
+  # Compute sample variances
+  sigma2_X <- apply(X_matrix, 1, var)
+  sigma2_RB <- apply(Y_matrix, 1, var)
+  
+  # Compute standard errors
+  SE_X <- sqrt(sigma2_X / n)
+  SE_RB <- sqrt(sigma2_RB / n)
+  
+  # Compute confidence intervals
+  CI_lower_X <- theta_hat_X - z_alpha * SE_X
+  CI_upper_X <- theta_hat_X + z_alpha * SE_X
+  
+  CI_lower_RB <- theta_hat_RB - z_alpha * SE_RB
+  CI_upper_RB <- theta_hat_RB + z_alpha * SE_RB
+  
+  # Check coverage
+  cover_X <- (CI_lower_X <= theta) & (theta <= CI_upper_X)
+  cover_RB <- (CI_lower_RB <= theta) & (theta <= CI_upper_RB)
+  
+  # Compute coverage probabilities
+  coverage_X <- mean(cover_X)
+  coverage_RB <- mean(cover_RB)
+  
+  return(c(Coverage_X = coverage_X, Coverage_RB = coverage_RB))
+}
+
+# Perform simulations for all sample sizes
+coverage_results <- sapply(n_values, simulate_coverage)
+coverage_results <- t(coverage_results)
+rownames(coverage_results) <- n_values
+
+# Display the results
+print("Empirical Coverage Probabilities:")
+print(coverage_results)
+
+```
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(tidyr)
+
+# Assuming coverage_results is already obtained from previous computations
+# If not, include the previous simulation code here
+
+# Convert the coverage_results matrix to a data frame
+coverage_df <- as.data.frame(coverage_results)
+coverage_df$SampleSize <- as.numeric(rownames(coverage_results))
+
+# Reshape the data frame to long format
+coverage_long <- pivot_longer(coverage_df, 
+                              cols = c("Coverage_X", "Coverage_RB"),
+                              names_to = "Estimator",
+                              values_to = "Coverage")
+
+# Create the ggplot
+ggplot(coverage_long, aes(x = SampleSize, y = Coverage, color = Estimator)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  geom_hline(yintercept = 0.95, linetype = "dashed", color = "black") +
+  scale_x_continuous(breaks = coverage_df$SampleSize) +
+  scale_y_continuous(limits = c(0.9, 1), labels = scales::percent) +
+  labs(title = "Empirical Coverage Probabilities",
+       x = "Sample Size (n)",
+       y = "Coverage Probability",
+       color = "Estimator") +
+  theme_minimal()
+
+
+# Plotting the coverage probabilities
+# plot(n_values, coverage_results[, "Coverage_X"], type = "o", col = "blue", ylim = c(0.9, 1),
+#      xlab = "Sample Size (n)", ylab = "Coverage Probability", main = "Empirical Coverage Probabilities")
+# lines(n_values, coverage_results[, "Coverage_RB"], type = "o", col = "red")
+# abline(h = 0.95, lty = 2)
+# legend("bottomright", legend = c("Standard Estimator", "Rao-Blackwellized Estimator"),
+#        col = c("blue", "red"), lty = 1, pch = 1)
+
+```
+
+
+## Problem 3. Control variate
+
+Consider Monte Carlo evaluation of the tail probability $E[1(X>a)]=P(X>a)=\int_a^\infty f(x)dx$, where $f(x)$ is the pdf of $X$. Sometimes, we know the value of $P(X>\mu)$ for some $\mu$. For example, if $f$ is symmetric around $\mu$, then $P(X>\mu)=1/2$. Then we may use the indicator $1(X>\mu)$ as a control variate and construct the following Monte Carlo estimator of $P(X>a)$, $$\frac{1}{m}\sum_{i=1}^m 1(X_i>a)+c \left(\frac{1}{m}\sum_{i=1}^m 1(X_i>\mu)-P(X>\mu)\right).$$ Use this approach to approximate the quantile $a$ such that $P(X>a)=0.01$, where $X$ has the $t_5$ distribution.
+
+
+### Solution :
+
+```{r}
+#  implement the simulation and evaluate the Monte Carlo approximation error
+# Set seed for reproducibility
+set.seed(123)
+
+# Parameters
+m <- 1e6  # Sample size
+df <- 5   # Degrees of freedom for t-distribution
+target_prob <- 0.01  # Target tail probability
+
+# Generate samples from t_5 distribution
+X <- rt(m, df = df)
+
+# Compute indicator for control variate (I_mu)
+I_mu <- as.numeric(X > 0)
+P_mu_hat <- mean(I_mu)  # Should be close to 0.5
+Var_I_mu <- P_mu_hat * (1 - P_mu_hat)  # Variance of I_mu
+
+# Define function to compute adjusted estimator and find quantile 'a'
+find_quantile <- function(target_prob, X, I_mu, P_mu_hat, Var_I_mu) {
+  # Define the function f(a)
+  f <- function(a) {
+    # Compute indicator I_a
+    I_a <- as.numeric(X > a)
+    
+    # Estimate P_hat(a)
+    P_a_hat <- mean(I_a)
+    
+    # Compute covariance between I_a and I_mu
+    Cov_Ia_Imu <- mean((I_a - P_a_hat) * (I_mu - P_mu_hat))
+    
+    # Compute optimal c
+    c_star <- -Cov_Ia_Imu / Var_I_mu
+    
+    # Compute adjusted estimator
+    P_c_hat <- P_a_hat + c_star * (P_mu_hat - 0.5)
+    
+    # Return the difference from target probability
+    return(P_c_hat - target_prob)
+  }
+  
+  # Use uniroot to find the quantile 'a'
+  result <- uniroot(f, lower = 2, upper = 10)
+  
+  return(result$root)
+}
+
+# Find the quantile 'a' such that P(X > a) = 0.01
+a_estimate <- find_quantile(target_prob, X, I_mu, P_mu_hat, Var_I_mu)
+
+# Display the estimated quantile
+cat("Estimated quantile a such that P(X > a) =", target_prob, "is", a_estimate, "\n")
+
+# Compare with the true quantile using qt function
+true_quantile <- qt(1 - target_prob, df = df)
+cat("True quantile from qt(1 -", target_prob, ", df =", df, ") is", true_quantile, "\n")
+
+```
+
+
+
+## Problem 4. Antithetic variable
+
+Apply the antithetic variable approach to obtain Monte Carlo estimates of the mean and 75th percentile of the exponential distribution $Exp(1)$ with pdf  $f(x)=e^{-x},x>0$.
+
+### Solution:
+
+```{r}
+# First justify the validity of using the antichetic variable approach
+
+```
+
+
+```{r}
+# Set seed for reproducibility
+set.seed(52)
+
+# Number of simulations
+n <- 1e6  # Adjust as needed for desired accuracy
+
+# Generate uniform random variables
+U <- runif(n)
+
+# Generate antithetic variables
+U_antithetic <- 1 - U
+
+# Transform to Exponential(1) variables
+X <- -log(U)
+X_antithetic <- -log(U_antithetic)
+
+# Combine the samples
+X_combined <- c(X, X_antithetic)
+
+# Estimate the mean using antithetic variables
+mean_antithetic <- mean(c(X, X_antithetic))
+
+# True mean of Exponential(1)
+true_mean <- 1
+
+# Estimate the 75th percentile
+percentile_75_index <- ceiling(0.75 * length(X_combined))
+X_sorted <- sort(X_combined)
+percentile_75_estimate <- X_sorted[percentile_75_index]
+
+# True 75th percentile
+true_percentile_75 <- -log(1 - 0.75)  # Approximately 1.386294
+
+# Display the results
+cat("Estimated mean using antithetic variables:", mean_antithetic, "\n")
+cat("True mean:", true_mean, "\n\n")
+
+cat("Estimated 75th percentile using antithetic variables:", percentile_75_estimate, "\n")
+cat("True 75th percentile:", true_percentile_75, "\n")
+
+# Next implement the simulation
+```
+
