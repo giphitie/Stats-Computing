@@ -109,7 +109,7 @@ kable(head(x_samples), caption = "Cholesky Samples",
 
 \newpage
 
-2. An alternative approach proposed by Hoffman and Ribak (1991) runs differently. It first generates $$\mathbf{Z} = \left(\begin{matrix}\mathbf{X} \\ \mathbf{Y} \end{matrix}\right) \sim N(\mathbf{\mu},\Sigma)$$ and then get $$\mathbf{\tilde{X}}=\mathbf{X}+\Sigma_{XY}\Sigma^{-1}_{YY}(\mathbf{y}-\mathbf{\mu}_Y).$$ Then $\mathbf{\tilde{X}}$ is from $N(\mathbf{\mu}_{X|Y}, \Sigma_{X|Y})$. Justify the validity of this algorithm and give an R implementation. Next comment on its computational cost by comparing with the standard approach above. You can compare from both a theoretical and empirical perspective. For the empirical perspective, you may time your implementations of the two methods for a specific simulation with a relatively large sample size.
+2. An alternative approach proposed by Hoffman and Ribak (1991) runs differently. It first generates $$\mathbf{Z} = \left(\begin{matrix}\mathbf{X} \\ \mathbf{Y} \end{matrix}\right) \sim N(\mathbf{\mu},\Sigma)$$ and then get $$\mathbf{\tilde{X}}=\mathbf{X}+\Sigma_{XY}\Sigma^{-1}_{YY}(\mathbf{y}-\mathbf{Y}).$$ Then $\mathbf{\tilde{X}}$ is from $N(\mathbf{\mu}_{X|Y}, \Sigma_{X|Y})$. Justify the validity of this algorithm and give an R implementation. Next comment on its computational cost by comparing with the standard approach above. You can compare from both a theoretical and empirical perspective. For the empirical perspective, you may time your implementations of the two methods for a specific simulation with a relatively large sample size.
 
 ### Solution:
 
@@ -118,7 +118,9 @@ knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homewor
 
 ```
 
+The Alternative approach invloves simulating from both $X$ and $Y$ and for smaller n's, so the approach performs poorly but for the Cholesky approach, we only have to simulate from a single variable $X$. So in general, the Cholesky decomposition will performs better for smaller n's.
 
+### Simulate from multivariate normal using the Hoffman and Ribak method:
 
 ```{r sim2}
 # simulate from multivariate normal using the Hoffman and Ribak method
@@ -191,17 +193,17 @@ kable(head(samples_alternative), caption = "Alternative Samples",
 # comparison of the two methods
 
 # Define parameters
-n <- 10000
-mu <- rep(0, 50)
-Sigma <- diag(50)
-y <- rep(0, 25)
+n <- 100000
+mu <- rep(0, 30)
+Sigma <- diag(30)
+y <- rep(0, 15)
 
 # Adjust dimensions
-k <- 25  # Dimension of X
+k <- 15  # Dimension of Y
 p <- length(mu)  # Total dimension
 
 # Generate a positive definite covariance matrix
-set.seed(123)
+set.seed(132)
 A <- matrix(rnorm(p^2), nrow = p)
 Sigma <- crossprod(A)
 
@@ -217,9 +219,27 @@ kable(summary(time_comp), caption = "Time to Compute",
       latex_options = c("hold_position",
                         "striped" ))
 
+#N <- 200
+# n <- 100000
+# mu <- rep(0, 50)
+# Sigma <- diag(50)
+# y <- rep(0, 25)
+# 
+# 
+# system.time(for (i in 1:N) mvn_conditional(n, y, mu, Sigma))
+# # 
+# system.time(for (i in 1:N) MVN_conditional_alternative(n, y, mu, Sigma))
+
 ```
-\begin{center} Table 3:  From the descriptive summary, we can see that Cholesky decomposition is much faster to compute and simulate the multivariate normal random variables than the alternative approach proposed by Hoffman and Ribak (1991)
+\begin{center} Table 3:  From the descriptive summary, we can see that Cholesky decomposition is much faster to compute and simulate the multivariate normal random variables than the alternative approach proposed by Hoffman and Ribak (1991).The Alternative method directly computes the conditional distribution $ X \mid Y = y $, avoiding the need to simulate the full joint distribution. 
+Then, this results in potentially lower computational cost when the dimension of Y is much smaller than the total dimension "n". Cholesky decomposition first samples from the full multivariate distribution and then extracts the conditional distribution. However, the method may involve more computation when dealing with high-dimensional data. For large datasets, the Hoffman and Ribak method should be faster as it bypasses the need to generate and then discard the variables in 
+Y, especially when X is much smaller than Y.
 \end{center}
+ 
+
+
+
+
 
 
 ## Problem 2. Rao-Blackwellization
@@ -237,7 +257,7 @@ knitr::include_graphics(c("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homew
 
 
 
-
+\newpage
 2. Construct a Rao-Blackwellized Monte Carlo estimator of $\theta=E(X)$ using the auxiliary variable $Y$. Then check the empirical coverage of the 95\% confidence interval of $\theta$ based on simulated values of $X$ and $Y$ as the size of the simulated sample increases. In the simulation, use $r=2$ and $p=2/3$.
 
 
@@ -253,6 +273,7 @@ knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homewor
 
 
 
+### Next, write an R program to implement the simulation:
 
 ```{r codeRB}
 # Next, write an R program to implement the simulation
@@ -265,7 +286,7 @@ theta <- r * (1 - p) / p
 z_alpha <- qnorm(0.975) 
 
 # Sample sizes and number of simulations
-n_values <- c(10, 20, 50, 100, 500, 1000)
+n_values <- c(10, 50, 100, 200, 500, 1000)
 N <- 1000  # Number of simulations for each sample size
 
 # Function to perform simulations for a given sample size
@@ -303,10 +324,10 @@ simulate_coverage <- function(n) {
   cover_RB <- (CI_lower_RB <= theta) & (theta <= CI_upper_RB)
   
 # coverage probabilities
-  coverage_X <- mean(cover_X)
+  Coverage_Naive <- mean(cover_X)
   coverage_RB <- mean(cover_RB)
   
-  return(c(Coverage_X = coverage_X, Coverage_RB = coverage_RB))
+  return(c(Coverage_Naive = Coverage_Naive, Coverage_RB = coverage_RB))
 }
 
 # Perform simulations for each sample sizes
@@ -324,7 +345,7 @@ coverage_df$SampleSize <- as.numeric(rownames(coverage_results))
 
 #data frame to long format for plot
 coverage_long <- pivot_longer(coverage_df, 
-                              cols = c("Coverage_X", "Coverage_RB"),
+                              cols = c("Coverage_Naive", "Coverage_RB"),
                               names_to = "Estimator",
                               values_to = "Coverage")
 
@@ -335,6 +356,8 @@ kable(coverage_df, caption = "Empirical Coverage Probabilities:",
 
 
 ```
+
+### Plot:
 
 ```{r plot, warning=FALSE, message=FALSE}
 
@@ -352,12 +375,12 @@ ggplot(coverage_long, aes(x = SampleSize, y = Coverage, color = Estimator)) +
 
 
 ## Plotting the coverage probabilities
-plot(n_values, coverage_results[, "Coverage_X"], type = "o", col = "blue", ylim = c(0.9, 1),
-     xlab = "Sample Size (n)", ylab = "Coverage Probability", main = "Empirical Coverage Probabilities")
-lines(n_values, coverage_results[, "Coverage_RB"], type = "o", col = "red")
-abline(h = 0.95, lty = 2)
-legend("bottomright", legend = c("Standard Estimator", "Rao-Blackwellized Estimator"),
-       col = c("blue", "red"), lty = 1, pch = 1)
+# plot(n_values, coverage_results[, "Coverage_Naive"], type = "o", col = "blue", ylim = c(0.9, 1),
+#      xlab = "Sample Size (n)", ylab = "Coverage Probability", main = "Empirical Coverage Probabilities")
+# lines(n_values, coverage_results[, "Coverage_RB"], type = "o", col = "red")
+# abline(h = 0.95, lty = 2)
+# legend("bottomright", legend = c("Standard Estimator", "Rao-Blackwellized Estimator"),
+#        col = c("blue", "red"), lty = 1, pch = 1)
 
 ```
 
@@ -439,7 +462,7 @@ true_quantile <- qt(1 - target_prob, df = df)
 # cat("True quantile from qt(1 -", target_prob, ", df =", df, ") is", true_quantile, "\n")
 
 ## Approximation error
-SE<- (true_quantile - a_estimate)/sqrt(m)
+SE<- abs((true_quantile - a_estimate)/sqrt(m))
 ```
 
 \begin{center} True quantile from the t-distribution (df = 5) is 
