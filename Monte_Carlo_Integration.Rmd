@@ -50,3 +50,36 @@ Phi <- pnorm(x)
 print(round(rbind(x,cdf,Phi),3))
 ```
 
+
+```{r}
+
+m<-10000
+theta.hat<-se<-rep(0,4)
+h<-function(x){
+exp(-x-log(1+x^2))*(x>0)*(x<1)
+}
+x<-runif(m) # using g0
+hg <- h(x)
+theta.hat[1]<-mean(hg)
+se[1]<-sd(hg)
+x<-rexp(m,1) # using g1
+hg <- h(x)/exp(-x)
+theta.hat[2]<-mean(hg)
+se[2]<-sd(hg)
+x<-rcauchy(m,1) # using g2
+i <- c(which(x>1),which(x<0))
+x[i]<-2
+hg <- h(x)/dcauchy(x)
+theta.hat[3]<-mean(hg)
+se[3]<-sd(hg)
+
+
+u<-runif(m) # using g3, inverse cdf approach
+x<- -log(1-u*(1-exp(-1)))
+hg <- h(x)/(exp(-x)/(1-exp(-1)))
+theta.hat[4]<-mean(hg)
+se[4]<-sd(hg)
+rbind(theta.hat,se)
+
+```
+

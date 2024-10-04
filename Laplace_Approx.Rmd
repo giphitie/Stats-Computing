@@ -11,5 +11,21 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 ### Try the gamma example here.
+alpha <- 2 ; beta = 1.5 
+a = 2.1
+b =  7
+
+## true density
+
+true_ing <- pgamma(b, shape = alpha, scale = beta) - pgamma(a, shape = alpha, scale = beta)
+
+
+## Using Laplace approximation
+
+x0 <- (alpha - 1)* beta
+
+approx_int <- ((x0^(alpha-1)*exp(x0/beta)*sqrt((2*pi*x0^2)/(alpha -1)))*(pnorm(sqrt((alpha - 1)/x0^2)*(b - x0))-pnorm(sqrt((alpha-1)/x0^2)*(a-x0))))/gamma(alpha)*beta^(alpha)
+
+
 ```
 

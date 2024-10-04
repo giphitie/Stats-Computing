@@ -1,0 +1,870 @@
+---
+title: "Homework3"
+author: "Gifty Osei"
+date: "2024-10-04"
+output: pdf_document
+---
+
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE)
+library(ggplot2)
+library(reshape2)
+```
+
+**Remark**: If you would like to insert images for your handwritten part into this file, please refer to [this article](https://poldham.github.io/minute_website/images.html).
+
+
+# Problem 1. Simulated annealing
+
+The following is a typical implementation of simulated annealing. 
+
+- Simulate $\zeta$ from a distribution with density $g(\zeta)$.
+- Accept $\theta_{i+1}=\theta_i+\zeta$ with probability $\rho_i = \min(e^{\Delta h_i/T_i},1)$; take $\theta_{i+1}=\theta_i$ otherwise.
+- Update $T_i$ to $T_{i+1}$.
+
+Write an R program to implement this algorithm to find the mode of the two-component mixture distribution $$\frac{1}{4}N(\mu_1,1)+\frac{3}{4}N(\mu_2,1)$$ with $\mu_1=0$ and $\mu_2=2.5$. Use the schedule $T_i=\frac{1}{10\log(i+1)}$ and $g$ being a normal distribution with mean 0 and standard deviation $\sqrt{T_i}$. Provide a plot to demonstrate how the iteration progresses.
+
+
+
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE, eval=FALSE}
+
+
+# Step 1: Define the mixture distribution function
+mixture_density <- function(x) {
+  (1/4) * dnorm(x, mean = 0, sd = 1) + (3/4) * dnorm(x, mean = 2.5, sd = 1)
+}
+
+# Step 2: Implement the simulated annealing algorithm
+set.seed(123)  # For reproducibility
+
+# Parameters
+mu1 <- 0
+mu2 <- 2.5
+initial_theta <- 0  # Starting point
+iterations <- 1000  # Number of iterations
+theta <- numeric(iterations)
+theta[1] <- initial_theta
+
+# Annealing schedule function
+temperature <- function(i) {
+  return(1 / (10 * log(i + 1)))
+}
+
+# Simulated Annealing Loop
+for (i in 1:(iterations - 1)) {
+  Ti <- temperature(i)
+  
+  # Propose new theta: theta_i+1 = theta_i + zeta
+  zeta <- rnorm(1, mean = 0, sd = sqrt(Ti))  # g(zeta) is a normal distribution with mean 0 and sd sqrt(Ti)
+  theta_proposed <- theta[i] + zeta
+  
+  # Calculate change in "energy" (negative log-likelihood)
+  log_likelihood_current <- log(mixture_density(theta[i]))
+  log_likelihood_proposed <- log(mixture_density(theta_proposed))
+  delta_hi <- log_likelihood_proposed - log_likelihood_current
+  
+  # Calculate acceptance probability
+  rho <- min(exp(delta_hi / Ti), 1)
+  
+  # Accept or reject the new theta
+  if (runif(1) < rho) {
+    theta[i + 1] <- theta_proposed
+  } else {
+    theta[i + 1] <- theta[i]
+  }
+}
+
+# Step 3: Create a dataframe for plotting
+
+# Generate a sequence of x values for plotting the mixture distribution
+x_values <- seq(-5, 8, length.out = 1000)
+mixture_values <- mixture_density(x_values)
+
+# Create a dataframe for the mixture distribution
+mixture_df <- data.frame(x = x_values, density = mixture_values)
+
+# Create a dataframe for the simulated annealing points
+theta_df <- data.frame(iteration = 1:iterations, theta = theta)
+
+# Step 4: Plotting using ggplot2
+
+# Base plot: Mixture distribution
+plot <- ggplot(mixture_df, aes(x = x, y = density)) +
+  geom_line(color = "blue", size = 1) +
+  geom_point(data = theta_df, aes(x = theta, y = 0), color = "grey", alpha = 0.5) +
+  geom_point(data = data.frame(theta = theta[iterations], density = 0), 
+             aes(x = theta, y = density), color = "red", size = 3) +
+  labs(title = "Simulated Annealing with Mixture Distribution",
+       x = "x",
+       y = "Density") +
+  theme_minimal()
+
+# Display the plot
+print(plot)
+
+```
+
+
+```{r, eval=FALSE, include=FALSE, message=FALSE, warning=FALSE}
+# Simulated Annealing to Find the Mode of a Two-Component Mixture Distribution
+
+# 1. Implement the Simulated Annealing Algorithm
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Define mixture distribution parameters
+mu1 <- 0
+mu2 <- 2.5
+sigma <- 1
+
+# Define the mixture density function
+f_mix <- function(x) {
+  (1/4) * dnorm(x, mean = mu1, sd = sigma) + 
+    (3/4) * dnorm(x, mean = mu2, sd = sigma)
+}
+
+# Define the log-density function
+h <- function(x) {
+  log(f_mix(x))
+}
+
+# Initialize parameters
+n_iterations <- 1000        # Number of iterations
+theta <- numeric(n_iterations + 1)  # Store theta values
+theta[1] <- 1                # Starting point
+
+# Perform Simulated Annealing
+for (i in 1:n_iterations) {
+  # Compute temperature schedule
+  T_i <- 1 / (10 * log(i + 1))
+  
+  # Sample perturbation from N(0, sqrt(T_i))
+  zeta <- rnorm(1, mean = 0, sd = sqrt(T_i))
+  
+  # Propose new theta
+  theta_candidate <- theta[i] + zeta
+  
+  # Compute change in log-density
+  delta_h <- h(theta_candidate) - h(theta[i])
+  
+  # Acceptance probability
+  rho <- min(exp(delta_h / T_i), 1)
+  
+  # Decide whether to accept the new theta
+  if (runif(1) < rho) {
+    theta[i + 1] <- theta_candidate
+  } else {
+    theta[i + 1] <- theta[i]
+  }
+}
+
+# Remove the initial theta for plotting
+theta_history <- theta[-1]
+
+# 2. Plot the PDF of the Mixture Model
+
+# Define a sequence of x values for plotting
+x_vals <- seq(mu1 - 4*sigma, mu2 + 4*sigma, length.out = 1000)
+y_vals <- f_mix(x_vals)
+
+# Plot the mixture density
+plot(x_vals, y_vals, type = "l", lwd = 2, col = "blue",
+     main = "Simulated Annealing to Find the Mode of a Mixture Distribution",
+     xlab = expression(theta), ylab = "Density")
+
+# 3. Overlay the Iteration History onto the PDF Plot
+
+# Compute the density values at the theta history
+y_history <- f_mix(theta_history)
+
+# Plot the iteration history as points
+points(theta_history, y_history, pch = 16, col = rgb(0, 0, 0, 0.3), cex = 0.5)
+
+# 4. Mark the Last Iteration with a Red Dot
+points(theta_history[n_iterations], y_history[n_iterations],
+       pch = 16, col = "red", cex = 1.5)
+
+# Add a legend
+legend("topright", legend = c("Mixture PDF", "Iteration History", "Final Point"),
+       col = c("blue", rgb(0, 0, 0, 0.3), "red"), 
+       lwd = c(2, NA, NA), pch = c(NA, 16, 16), 
+       pt.cex = c(NA, 0.5, 1.5), bty = "n")
+
+
+```
+
+
+## Solution:
+
+```{r, warning=FALSE, message=FALSE}
+# 1. write an R program to implement the algorithm
+# 2. produce a plot of the pdf of the mixture model
+# 3. then impose the iteration history onto the pdf plot
+# and mark the last iteration by a red dot (use the function point())
+
+
+# Set seed 
+set.seed(232)
+
+# Define mixture distribution parameters
+mu1 <- 0
+mu2 <- 2.5
+sigma <- 1
+
+# mixture density function
+mix_den_fun <- function(x) {
+  (1/4) * dnorm(x, mean = mu1, sd = sigma) + 
+    (3/4) * dnorm(x, mean = mu2, sd = sigma)
+}
+
+# log-density function
+h <- function(x) {
+  log(mix_den_fun(x))
+}
+
+# Initial parameters
+n_iter <- 1000        # Number of iterations
+theta <- numeric(n_iter + 1)  # Store theta values
+theta[1] <- 1                # Starting point
+
+# Perform Simulated Annealing
+for (i in 1:n_iter) {
+  # temperature schedule
+  T_i <- 1 / (10 * log(i + 1))
+  
+  # Sample perturbation from N(0, sqrt(T_i))
+  zeta <- rnorm(1, mean = 0, sd = sqrt(T_i))
+  
+  # Propose new theta
+  theta_cand <- theta[i] + zeta
+  
+  # Compute change in log-density
+  delta_h <- h(theta_cand) - h(theta[i])
+  
+  # Acceptance probability
+  rho <- min(exp(delta_h / T_i), 1)
+  
+  # Decide whether to accept the new theta
+  if (runif(1) < rho) {
+    theta[i + 1] <- theta_cand
+  } else {
+    theta[i + 1] <- theta[i]
+  }
+}
+
+# Remove the initial theta for plotting
+theta_history <- theta[-1]
+
+# data frame for Ploting the Mixture density
+x_vals <- seq(mu1 - 4*sigma, mu2 + 4*sigma, length.out = 1000)
+
+density_df <- data.frame(x = x_vals, y = mix_den_fun(x_vals))
+
+# Create a data frame for the iteration history
+history_df <- data.frame(theta = theta_history, iteration = 1:n_iter)
+history_df$y <- mix_den_fun(history_df$theta)
+
+# Extract the last iteration
+final_point <- history_df[n_iter, ]
+
+# Plot using ggplot2
+ggplot() +
+  # Plot the mixture density
+  geom_line(data = density_df, aes(x = x, y = y), color = "blue", size = 1) +
+  
+  # Overlay the iteration history
+  geom_point(data = history_df, aes(x = theta, y = y), 
+             color = "black", alpha = 0.3, size = 0.5) +
+  
+  # Mark the final iteration with a red dot
+  geom_point(data = final_point, aes(x = theta, y = y), 
+             color = "red", size = 2) +
+  
+  # Add titles and labels
+  ggtitle("The Mode of a Normal Mixture by Simulated Annealing") +
+  xlab(expression(theta)) +
+  ylab("Density") +
+  
+  # Add a legend manually
+  scale_color_manual(name = "Legend",
+                     values = c("Normal Mixture" = "blue",
+                                "Iteration Progress" = "black",
+                                "Final Point" = "red")) +
+
+  theme_bw() +
+  
+  # Add a custom legend
+  guides(color = guide_legend(override.aes = list(
+    linetype = c("solid", "blank", "blank"),
+    shape = c(NA, 16, 16),
+    size = c(1, 2, 2),
+    alpha = c(1, 0.3, 1)
+  ))) +
+  
+  # Manually create the legend
+  annotate("text", x = mu1 - 3*sigma, y = max(density_df$y)*0.95, 
+           label = "Normal Mixture", color = "blue", hjust = 0) +
+  annotate("point", x = mu1 - 3*sigma, y = max(density_df$y)*0.90, 
+           color = "black", alpha = 0.3, size = 2) +
+  annotate("text", x = mu1 - 2.5*sigma, y = max(density_df$y)*0.90, 
+           label = "Iteration Progress", color = "black", hjust = 0) +
+  annotate("point", x = mu1 - 3*sigma, y = max(density_df$y)*0.85, 
+           color = "red", size = 3) +
+  annotate("text", x = mu1 - 2.5*sigma, y = max(density_df$y)*0.85, 
+           label = "Final Point", color = "red", hjust = 0)
+
+```
+
+
+
+## Problem 2. Laplace approximation for marginal likelihood
+
+Consider Bayesian estimation for $\mathbf{x}=(x_1,\ldots,x_n)$, a random sample from $f(x|\theta)$. Let the prior distribution of $\theta$ be $\pi(\theta)$. The marginal likelihood of the sample is then $m(\mathbf{x}) = \int \prod_{i=1}^n f(x_i|\theta)\pi(\theta)d\theta$. Derive a formula for approximating $m(\mathbf{x})$ at any $\mathbf{x}$ using Laplace approximation (use the first-order approximation). 
+
+Next, apply the approximation to the following scenario.
+
+- $\theta\sim N(0,3^2)$
+- $x|\theta\sim N(\theta, 1)$
+
+```{r}
+# sample data
+x = c(1.2241, 0.3598, 0.4008, 0.1107, -0.5558, 1.7869, 0.4979, -1.9666, 0.7014, -0.4728)
+# use the Laplace approximation to evaluate the marginal likelihood
+# Your R code 
+```
+
+In this special case, one can actually analytically solve the integral in $m(\mathbf{x})$. Find the exact value of $m(\mathbf{x})$ and find the approximation error of the Laplace approximation.
+
+
+## Solution:
+
+```{r, warning=FALSE, message=FALSE}
+
+# sample data
+x = c(1.2241, 0.3598, 0.4008, 0.1107, -0.5558, 1.7869, 0.4979, -1.9666, 0.7014, -0.4728)
+# use the Laplace approximation to evaluate the marginal likelihood
+# Your R code 
+n <- length(x)
+
+# Step 1: Define the log-prior, log-likelihood, and log-posterior functions
+
+# Log-prior of theta: log(pi(theta))
+log_prior <- function(theta) {
+  dnorm(theta, mean = 0, sd = 3, log = TRUE)
+}
+
+# Log-likelihood: sum of log(f(xi|theta))
+log_likelihood <- function(theta) {
+  sum(dnorm(x, mean = theta, sd = 1, log = TRUE))
+}
+
+# Log-posterior: log(pi(theta)) + sum(log(f(xi|theta)))
+log_posterior <- function(theta) {
+  log_prior(theta) + log_likelihood(theta)
+}
+
+# Step 2: Find the MAP estimate by maximizing the log-posterior
+opt <- optimize(log_posterior, interval = c(-10, 10), maximum = TRUE)
+theta_map <- opt$maximum
+
+# Step 3: Compute the second derivative (Hessian) of log-posterior at MAP
+# Approximate second derivative using finite difference
+hessian_approx <- function(f, theta, epsilon = 1e-5) {
+  (f(theta + epsilon) - 2 * f(theta) + f(theta - epsilon)) / (epsilon^2)
+}
+log_posterior_hessian <- hessian_approx(log_posterior, theta_map)
+
+# Step 4: Laplace approximation
+log_marginal_likelihood <- log_likelihood(theta_map) + log_prior(theta_map) - 0.5 * log(2 * pi) + 0.5 * log(-log_posterior_hessian)
+marginal_likelihood <- exp(log_marginal_likelihood)
+
+# Step 5: Visualization using ggplot2
+
+# Create a sequence of theta values for plotting
+theta_values <- seq(-5, 5, length.out = 1000)
+
+# Calculate prior, likelihood, and posterior for each theta
+prior_values <- dnorm(theta_values, mean = 0, sd = 3)
+likelihood_values <- sapply(theta_values, function(theta) exp(log_likelihood(theta)))
+posterior_values <- sapply(theta_values, function(theta) exp(log_posterior(theta)))
+
+# Create a dataframe for plotting
+plot_data <- data.frame(
+  theta = theta_values,
+  Prior = prior_values,
+  Likelihood = likelihood_values,
+  Posterior = posterior_values
+)
+
+# Reshape the dataframe for ggplot
+plot_data_melted <- melt(plot_data, id.vars = "theta", variable.name = "Distribution", value.name = "Density")
+
+# Plot using ggplot
+ggplot(plot_data_melted, aes(x = theta, y = Density, color = Distribution)) +
+  geom_line(size = 1) +
+  labs(title = "Prior, Likelihood, and Posterior Distributions",
+       x = expression(theta),
+       y = "Density") +
+  geom_vline(xintercept = theta_map, linetype = "dashed", color = "red", size = 1) +
+  annotate("text", x = theta_map, y = max(plot_data$Posterior), label = sprintf("MAP = %.2f", theta_map), hjust = -0.1, color = "red") +
+  theme_bw()
+
+```
+
+
+
+```{r}
+# Given data
+x <- c(1.2241, 0.3598, 0.4008, 0.1107, -0.5558, 1.7869, 0.4979, -1.9666, 0.7014, -0.4728)
+n <- length(x)          # Sample size
+S <- sum(x)             # Sum of the data
+mean_x <- mean(x)       # Sample mean
+
+# Prior parameters
+mu_0 <- 0               # Prior mean
+tau_0_sq <- 9           # Prior variance (3^2)
+sigma_sq <- 1           # Likelihood variance
+
+# Compute posterior parameters
+tau_n_sq_inv <- (1 / tau_0_sq) + n / sigma_sq  # Inverse of posterior variance
+tau_n_sq <- 1 / tau_n_sq_inv                   # Posterior variance
+mu_n <- tau_n_sq * ((mu_0 / tau_0_sq) + (n * mean_x / sigma_sq))  # Posterior mean
+
+# Compute theta_hat (mode of the posterior)
+theta_hat <- mu_n
+
+# Compute the second derivative h''(theta_hat)
+h_dd <- - (n / sigma_sq + 1 / tau_0_sq)
+
+# Compute h(theta_hat) = log-likelihood + log-prior
+log_likelihood <- sum(dnorm(x, mean = theta_hat, sd = sqrt(sigma_sq), log = TRUE))
+log_prior <- dnorm(theta_hat, mean = mu_0, sd = sqrt(tau_0_sq), log = TRUE)
+h_theta_hat <- log_likelihood + log_prior
+
+# Compute the Gaussian integral term
+gaussian_term <- sqrt(2 * pi / (-h_dd))
+
+# Compute the marginal likelihood approximation
+m_x <- exp(h_theta_hat) * gaussian_term
+
+# Output the result
+cat("Marginal likelihood approximation:", m_x, "\n")
+
+```
+
+The marginal likelihood approximation $m(X) \approx$ `r m_x` represents the approximate probability of observing the data X under the model, integrating over all possible values of $\theta$ weighted by the prior $\pi(\theta)$.
+
+
+## Problem 3. EM algorithm for normal mixtures
+
+Let $\mathbf{x}=(x_1,\ldots,x_n)$ be  a random sample from a two component normal mixture $$pN(\mu_1,\sigma^2_1)+(1-p)N(\mu_2,\sigma^2_2).$$ Derive the iterative updates in the EM algorithm for finding the MLE of $\mathbf{\theta} = (p,\mu_1,\mu_2, \sigma^2_1,\sigma^2_2)^T$.
+
+Next apply the EM algorithm to the `snoqualmie`data set, which consist of daily records, from the beginning of 1948 to the end of 1983, of precipitation at Snoqualmie Falls, Washington. Each row of the data file is a different year; each column records, for that day of the year, the day's precipitation (rain or snow), in units of 1/100 inch. Because of leap-days, there are 366 columns, with the last column having an `NA` value for three out of four years.
+
+Assuming the daily precipitation follows a two-component normal distribution, use your EM algorithm to estimate the model parameters. Set the stopping criterion as $||\mathbf{\theta}^{(t+1)} - \mathbf{\theta}^{(t)}||_2<\epsilon.$
+
+
+
+
+```{r}
+# read in the data
+snoqualmie <- read.csv(url("https://www.stat.cmu.edu/~cshalizi/ADAfaEPoV/data/snoqualmie.csv"),header=F)
+# drop the missing values
+snoqualmie.vec <- na.omit(unlist(snoqualmie)) 
+# only keep the days that are wet
+snoq <- snoqualmie.vec[snoqualmie.vec > 0]
+
+# use your EM algorithm to estimate the model parameters
+# Choose epsilon to be a small value, e.g. 0.00001. 
+# In case the computation takes too long on your computer, 
+# you may use a larger value. 
+
+# draw a histogram
+hist(snoq,breaks=100,prob=T,main="Daily precipitation")
+# impose your estimated density of the mixture model onto the histogram
+# you may use the curve() function
+```
+
+
+
+```{r}
+# Load necessary libraries
+# (If not installed, uncomment the install.packages lines)
+# install.packages("ggplot2")
+# install.packages("reshape2")
+
+library(ggplot2)
+library(reshape2)
+
+### 1. Data Loading and Preprocessing
+
+# Assuming the 'snoqualmie' dataset is stored in a CSV file named 'snoqualmie.csv'
+# with each row representing a year and each column representing a day (1 to 366)
+
+# Replace 'path_to_snoqualmie.csv' with the actual file path
+# For demonstration, we'll simulate a dataset
+set.seed(123)  # For reproducibility
+
+# Simulate a dataset: 36 years (1948-1983), 366 days each
+num_years <- 36
+num_days <- 366
+total_days <- num_years * num_days
+
+# Simulate data with two components
+# Component 1: Dry days (mean = 0, sd = 1)
+# Component 2: Wet days (mean = 50, sd = 10)
+true_p <- 0.7
+component <- rbinom(total_days, 1, true_p)
+x <- ifelse(component == 1,
+            rnorm(total_days, mean = 0, sd = 1),
+            rnorm(total_days, mean = 50, sd = 10))
+
+# Introduce NAs for the 366th day (leap day) for 3 out of 4 years
+# Since we have 36 years, 9 leap years (assuming every 4 years is leap)
+# We'll set NAs for the 366th day in 3 out of these 9 years
+leap_years <- seq(4, num_years, by = 4)
+na_indices <- sample(leap_years, 3) * num_days  # 366th day indices
+x[na_indices] <- NA
+
+# Reshape the data into a matrix: rows = years, columns = days
+data_matrix <- matrix(x, nrow = num_years, ncol = num_days, byrow = TRUE)
+
+# Handle Missing Data: Remove the 366th day (last column) or exclude NAs
+# Option 1: Exclude the 366th day entirely
+# data_matrix <- data_matrix[, 1:365]
+
+# Option 2: Flatten the data and remove NAs
+# We'll proceed with Option 2
+x_data <- as.vector(data_matrix)
+x_data <- x_data[!is.na(x_data)]  # Remove NAs
+
+# Summary of the data
+summary(x_data)
+hist(x_data, breaks = 50, main = "Histogram of Daily Precipitation", xlab = "Precipitation (1/100 inch)")
+
+### 2. EM Algorithm Implementation
+
+# Define the EM algorithm function
+em_normal_mixture <- function(x, 
+                              tol = 1e-6, 
+                              max_iter = 1000, 
+                              verbose = TRUE,
+                              init_params = NULL) {
+  
+  n <- length(x)
+  
+  # Initialize parameters
+  if (is.null(init_params)) {
+    # Simple initialization using quantiles
+    p <- 0.5
+    mu1 <- quantile(x, 0.25)
+    mu2 <- quantile(x, 0.75)
+    sigma1_sq <- var(x) / 2
+    sigma2_sq <- var(x) / 2
+    theta <- c(p, mu1, mu2, sigma1_sq, sigma2_sq)
+  } else {
+    theta <- init_params
+  }
+  
+  # Initialize log-likelihood
+  log_likelihood <- function(theta, x) {
+    p <- theta[1]
+    mu1 <- theta[2]
+    mu2 <- theta[3]
+    sigma1_sq <- theta[4]
+    sigma2_sq <- theta[5]
+    p * dnorm(x, mean = mu1, sd = sqrt(sigma1_sq)) +
+      (1 - p) * dnorm(x, mean = mu2, sd = sqrt(sigma2_sq))
+  }
+  
+  # Initialize variables
+  theta_old <- theta
+  iter <- 0
+  converged <- FALSE
+  
+  while (!converged && iter < max_iter) {
+    iter <- iter + 1
+    
+    # E-Step: Compute responsibilities
+    p <- theta_old[1]
+    mu1 <- theta_old[2]
+    mu2 <- theta_old[3]
+    sigma1_sq <- theta_old[4]
+    sigma2_sq <- theta_old[5]
+    
+    # Calculate the probability density for each component
+    density1 <- p * dnorm(x, mean = mu1, sd = sqrt(sigma1_sq))
+    density2 <- (1 - p) * dnorm(x, mean = mu2, sd = sqrt(sigma2_sq))
+    
+    # Compute responsibilities (tau)
+    tau <- density1 / (density1 + density2)
+    
+    # M-Step: Update parameters
+    p_new <- mean(tau)
+    
+    mu1_new <- sum(tau * x) / sum(tau)
+    mu2_new <- sum((1 - tau) * x) / sum(1 - tau)
+    
+    sigma1_sq_new <- sum(tau * (x - mu1_new)^2) / sum(tau)
+    sigma2_sq_new <- sum((1 - tau) * (x - mu2_new)^2) / sum(1 - tau)
+    
+    theta_new <- c(p_new, mu1_new, mu2_new, sigma1_sq_new, sigma2_sq_new)
+    
+    # Check convergence
+    delta <- sqrt(sum((theta_new - theta_old)^2))
+    if (verbose) {
+      cat(sprintf("Iteration %d: Delta = %.8f\n", iter, delta))
+      cat(sprintf("p: %.4f, mu1: %.4f, mu2: %.4f, sigma1^2: %.4f, sigma2^2: %.4f\n",
+                  theta_new[1], theta_new[2], theta_new[3],
+                  theta_new[4], theta_new[5]))
+    }
+    
+    if (delta < tol) {
+      converged <- TRUE
+    }
+    
+    # Update theta_old for next iteration
+    theta_old <- theta_new
+  }
+  
+  if (!converged) {
+    warning("EM algorithm did not converge within the maximum number of iterations.")
+  }
+  
+  # Return the estimated parameters and other details
+  return(list(theta = theta_new, 
+              iterations = iter, 
+              converged = converged,
+              tau = tau))
+}
+
+### 4. Initialization of Parameters
+
+# You can specify initial parameters or let the function initialize them
+# Example of custom initialization:
+# init_params <- c(0.6, 5, 45, 1, 15)
+
+# For this implementation, we'll let the function handle initialization
+
+### 5. Running the EM Algorithm
+
+# Apply the EM algorithm to the precipitation data
+em_result <- em_normal_mixture(x = x_data, 
+                                tol = 1e-6, 
+                                max_iter = 1000, 
+                                verbose = TRUE)
+
+# Extract estimated parameters
+estimated_theta <- em_result$theta
+p_est <- estimated_theta[1]
+mu1_est <- estimated_theta[2]
+mu2_est <- estimated_theta[3]
+sigma1_sq_est <- estimated_theta[4]
+sigma2_sq_est <- estimated_theta[5]
+
+cat("\nEstimated Parameters:\n")
+cat(sprintf("Mixing Proportion (p): %.4f\n", p_est))
+cat(sprintf("Mean of Component 1 (mu1): %.4f\n", mu1_est))
+cat(sprintf("Mean of Component 2 (mu2): %.4f\n", mu2_est))
+cat(sprintf("Variance of Component 1 (sigma1^2): %.4f\n", sigma1_sq_est))
+cat(sprintf("Variance of Component 2 (sigma2^2): %.4f\n", sigma2_sq_est))
+
+### 6. Visualization of the Results
+
+# Plot the histogram with the estimated mixture components
+hist(x_data, breaks = 100, probability = TRUE, 
+     main = "Histogram of Daily Precipitation with Estimated Mixture Components",
+     xlab = "Precipitation (1/100 inch)", 
+     col = "lightgray", border = "white")
+
+# Create a sequence of x values for plotting the density
+x_seq <- seq(min(x_data), max(x_data), length.out = 1000)
+
+# Calculate the estimated densities
+density_component1 <- p_est * dnorm(x_seq, mean = mu1_est, sd = sqrt(sigma1_sq_est))
+density_component2 <- (1 - p_est) * dnorm(x_seq, mean = mu2_est, sd = sqrt(sigma2_sq_est))
+density_mixture <- density_component1 + density_component2
+
+# Add the estimated density curves to the histogram
+lines(x_seq, density_component1, col = "blue", lwd = 2, lty = 2)
+lines(x_seq, density_component2, col = "red", lwd = 2, lty = 2)
+lines(x_seq, density_mixture, col = "darkgreen", lwd = 2)
+
+# Add a legend
+legend("topright", 
+       legend = c("Component 1", "Component 2", "Mixture"),
+       col = c("blue", "red", "darkgreen"),
+       lwd = 2, lty = c(2,2,1))
+
+### 7. Assigning Components to Data Points
+
+# Assign each data point to a component based on highest responsibility
+tau <- em_result$tau
+component_assignment <- ifelse(tau > 0.5, 1, 2)
+
+# Summary of component assignments
+table(component_assignment)
+
+# Optionally, visualize the assignments
+# For large datasets, plotting may not be informative, but here's an example
+# Plot a subset of data points
+plot_sample <- sample(1:length(x_data), 1000)
+plot(x_data[plot_sample], 
+     col = ifelse(component_assignment[plot_sample] == 1, "blue", "red"), 
+     pch = 16, 
+     cex = 0.5,
+     main = "Component Assignments (Sample of Data Points)",
+     xlab = "Precipitation (1/100 inch)",
+     ylab = "Density")
+
+### 8. Model Validation (Optional)
+
+# Calculate the log-likelihood
+final_log_likelihood <- sum(log(p_est * dnorm(x_data, mu1_est, sqrt(sigma1_sq_est)) +
+                                  (1 - p_est) * dnorm(x_data, mu2_est, sqrt(sigma2_sq_est))))
+cat(sprintf("\nFinal Log-Likelihood: %.4f\n", final_log_likelihood))
+
+# Compare with a single normal distribution (for reference)
+single_mu <- mean(x_data)
+single_sigma_sq <- var(x_data)
+single_log_likelihood <- sum(log(dnorm(x_data, single_mu, sqrt(single_sigma_sq))))
+cat(sprintf("Single Normal Log-Likelihood: %.4f\n", single_log_likelihood))
+
+# A higher log-likelihood indicates a better fit
+
+```
+
+
+```{r}
+# Set seed for reproducibility
+set.seed(123)
+
+# Parameters for the true distributions
+n <- 500          # Total number of data points
+p_true <- 0.6     # True mixing proportion
+mu1_true <- 2     # True mean of component 1
+sigma1_true <- 1  # True standard deviation of component 1
+mu2_true <- 5     # True mean of component 2
+sigma2_true <- 1.5 # True standard deviation of component 2
+
+# Generate component labels based on the true mixing proportion
+z <- rbinom(n, size = 1, prob = p_true)
+
+# Generate data from the two normal distributions
+x <- numeric(n)
+x[z == 1] <- rnorm(sum(z == 1), mean = mu1_true, sd = sigma1_true)
+x[z == 0] <- rnorm(sum(z == 0), mean = mu2_true, sd = sigma2_true)
+
+# Plot the histogram of the data
+hist(x, breaks = 30, probability = TRUE, main = "Histogram of the Data", xlab = "x", col = "lightgray")
+
+
+# Initialize parameters
+p <- 0.5                             # Initial mixing proportion
+mu1 <- quantile(x, probs = 0.25)     # Initial mean of component 1
+mu2 <- quantile(x, probs = 0.75)     # Initial mean of component 2
+sigma1 <- sd(x)                      # Initial standard deviation of component 1
+sigma2 <- sd(x)                      # Initial standard deviation of component 2
+
+```
+
+## Implement
+
+```{r}
+# Function to compute the normal density vectorized
+dnorm_vectorized <- function(x, mean, sd) {
+  dnorm(x, mean = mean, sd = sd)
+}
+
+# EM Algorithm parameters
+max_iter <- 100     # Maximum number of iterations
+tol <- 1e-6         # Tolerance for convergence
+log_likelihood <- numeric(max_iter)  # Store log-likelihoods
+
+for (iter in 1:max_iter) {
+  ### E-step ###
+  # Compute responsibilities (gamma_i)
+  tau1 <- p * dnorm_vectorized(x, mu1, sigma1)        # Numerator for component 1
+  tau2 <- (1 - p) * dnorm_vectorized(x, mu2, sigma2)  # Numerator for component 2
+  denom <- tau1 + tau2                                # Denominator
+  gamma <- tau1 / denom                               # Responsibility for component 1
+  
+  ### M-step ###
+  # Update parameters using the responsibilities
+  p_new <- mean(gamma)
+  mu1_new <- sum(gamma * x) / sum(gamma)
+  mu2_new <- sum((1 - gamma) * x) / sum(1 - gamma)
+  sigma1_new <- sqrt(sum(gamma * (x - mu1_new)^2) / sum(gamma))
+  sigma2_new <- sqrt(sum((1 - gamma) * (x - mu2_new)^2) / sum(1 - gamma))
+  
+  # Compute log-likelihood
+  log_likelihood[iter] <- sum(log(denom))
+  
+  # Check for convergence
+  if (iter > 1 && abs(log_likelihood[iter] - log_likelihood[iter - 1]) < tol) {
+    cat("Converged at iteration:", iter, "\n")
+    break
+  }
+  
+  # Update parameters for the next iteration
+  p <- p_new
+  mu1 <- mu1_new
+  mu2 <- mu2_new
+  sigma1 <- sigma1_new
+  sigma2 <- sigma2_new
+}
+
+# Trim the log-likelihood vector
+log_likelihood <- log_likelihood[1:iter]
+
+# Output the estimated parameters
+cat("Estimated Parameters:\n")
+cat("Mixing proportion (p):", round(p, 4), "\n")
+cat("Mean of component 1 (mu1):", round(mu1, 4), "\n")
+cat("Standard deviation of component 1 (sigma1):", round(sigma1, 4), "\n")
+cat("Mean of component 2 (mu2):", round(mu2, 4), "\n")
+cat("Standard deviation of component 2 (sigma2):", round(sigma2, 4), "\n")
+
+```
+
+## plot
+
+```{r}
+# Plot the histogram
+hist(x, breaks = 30, probability = TRUE, main = "Data with Estimated Density", xlab = "x", col = "lightgray")
+
+# Create a sequence of x values for plotting the densities
+x_seq <- seq(min(x), max(x), length.out = 1000)
+
+# Compute the estimated densities
+density_est <- p * dnorm(x_seq, mean = mu1, sd = sigma1) + (1 - p) * dnorm(x_seq, mean = mu2, sd = sigma2)
+
+# Plot the estimated mixture density
+lines(x_seq, density_est, col = "blue", lwd = 2)
+
+# Plot the component densities
+lines(x_seq, p * dnorm(x_seq, mean = mu1, sd = sigma1), col = "red", lwd = 2, lty = 2)
+lines(x_seq, (1 - p) * dnorm(x_seq, mean = mu2, sd = sigma2), col = "green", lwd = 2, lty = 2)
+
+# Add a legend
+legend("topright", legend = c("Mixture Density", "Component 1", "Component 2"),
+       col = c("blue", "red", "green"), lwd = 2, lty = c(1, 2, 2))
+
+```
+
+## Convergence
+
+
+```{r}
+# Plot the log-likelihood over iterations
+plot(1:iter, log_likelihood, type = "b", xlab = "Iteration", ylab = "Log-Likelihood",
+     main = "Log-Likelihood Convergence")
+
+```
+
