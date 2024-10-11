@@ -9,3 +9,153 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Numerical Solution
+
+```{r}
+y <- rexp(100, rate=3)
+mlogL <- function (theta){
+# minus log-likelihood
+-(length(y)*log(theta)-theta*sum(y))
+}
+library(stats4)
+fit <- mle(mlogL,start=list(theta=1))
+summary(fit)
+```
+
+
+## Optimization
+
+```{r}
+LL <- function(theta, x){
+a <- theta[1]
+s <- theta[2]
+n <- length(x)
+loglik <- -n*a*log(s)-n*log(gamma(a))+(a-1)*sum(log(x))-sum(x)/s
+return(-loglik)
+}
+data <- rgamma(100, shape=2, scale=3)
+optim(c(1,1), LL, x=data)
+```
+
+
+## Monitor Approximation
+
+```{r}
+h = function(x){(cos(50*x)+sin(20*x))^2}
+rangom = h(matrix(runif(10^6),ncol=10^3))
+monitor = t(apply(rangom,1,cummax))
+plot(monitor[1,],type="l",col="white")
+polygon(c(1:10^3,10^3:1),c(apply(monitor,2,max),
+rev(apply(monitor,2,min))),col="grey")
+abline(h=optimise(h,c(0,1),maximum=T)$ob)
+
+
+
+h = function(x,y){
+(x*sin(20*y)+y*sin(20*x))^2*cosh(sin(10*x)*x) + (x*cos(10*y)-y*sin(10*x))^2*cosh(cos(20*y)*y)}
+x=y=seq(-3,3,length=435)
+z=outer(x,y,h)
+par(bg="wheat",mar=c(1,1,1,1))
+persp(x,y,z,theta=155,phi=30,col="green4",ltheta=-120,shade=.75,border=NA,ticktype = "simple")
+```
+
+
+## Cauchy Minimization
+
+```{r}
+set.seed(1234)
+n = 100
+cau = rcauchy(n)
+mcau = median(cau)
+rcau = IQR(cau)
+f = function (x){
+z=dcauchy(outer(x,cau,FUN="-"))
+apply(z,1,mean)
+}
+fcst = integrate(f,lower=-20,upper=20)$value
+ft=function(x){f(x)/fcst}
+g=function(x){dt((x-mcau)/rcau,df=2*n-1)/rcau}
+curve(ft,from=-10,to=10)
+curve(g,add=T,lty=2)
+```
+
+
+## Plot
+
+```{r}
+unisan = matrix(f(runif(5*10^4,-5,5)),ncol=500)
+causan = matrix(f(rt(5*10^4,df=2*n-1)*rcau+mcau),ncol=500)
+unimax = apply(unisan,2,cummax)[10:10^2,]
+caumax = apply(causan,2,cummax)[10:10^2,]
+
+plot(caumax[,1],col="white",ylim=c(.8,1)*max(causan))
+polygon(c(10:10^2,10^2:10),c(apply(unimax,1,max),
+rev(apply(unimax,1,min))),col="grey")
+polygon(c(10:10^2,10^2:10),c(apply(caumax,1,max),
+rev(apply(caumax,1,min))),col="wheat")
+```
+
+## Stochastic Gradient Method
+
+```{r}
+h1 = function(vec){
+x=vec[1]
+y=vec[2]
+h(x,y)
+}
+start = c(.65,.8)
+theta = matrix(start,ncol=2)
+alpha = beta = c()
+dif = iter = 1
+
+while (dif>10^-5){
+print(c(iter,dif))
+alpha[iter] = 0.1/(log(iter+1))
+beta[iter] = 1/iter
+xi = rnorm(2)
+xi = xi/sqrt(t(xi)%*%xi)
+grad = alpha[iter]*xi*(h1(theta[iter,]+beta[iter]*xi)
+-h1(theta[iter,]-beta[iter]*xi))/beta[iter]
+scale = sqrt(t(grad)%*%grad)
+while (scale > 1){
+# protect against diverging evaluation of the gradient
+xi = rnorm(2)
+xi = xi/sqrt(t(xi)%*%xi)
+grad = alpha[iter]*xi*(h1(theta[iter,]+beta[iter]*xi)
+-h1(theta[iter,]-beta[iter]*xi))/beta[iter]
+scale = sqrt(t(grad)%*%grad)
+}
+theta = rbind(theta,theta[iter,]+grad)
+dif = sqrt(t(grad)%*%grad)
+print(theta[iter,])
+iter = iter+1
+}
+```
+
+
+## Simulated Annealing
+
+```{r}
+set.seed(16334)
+h = function(x){(cos(50*x)+sin(20*x))^2}
+x = runif(1)
+hval=hcur=h(x)
+diff=iter=1
+temp=c()
+while(diff>10^(-5)){
+temp[iter] = 1/log(iter)
+scale = sqrt(temp[iter])
+prop = x[iter]+runif(1,-1,1)*scale
+if ((prop>1)||(prop<0)||(log(runif(1))*temp[iter]>h(prop)-hcur))
+prop=x[iter]
+x=c(x,prop)
+hcur=h(prop)
+hval=c(hval,hcur)
+if((iter>10)&&(length(unique(x[(iter/2):iter]))>1))
+diff=max(hval)-max(hval[1:(iter/2)])
+iter=iter+1
+}
+print(iter)
+```
+
+

@@ -283,11 +283,14 @@ ggplot() +
   
   # Overlay the iteration history
   geom_point(data = history_df, aes(x = theta, y = y), 
-             color = "black", alpha = 0.3, size = 0.5) +
+             color = "black", alpha = 0.3, size = 2) +
   
   # Mark the final iteration with a red dot
   geom_point(data = final_point, aes(x = theta, y = y), 
-             color = "red", size = 2) +
+             color = "red", size = 2.5) +
+  geom_vline(xintercept = final_point$theta, 
+             linetype = "dashed", color = "green", size = 0.5)+
+  
   ggtitle("The Mode of a Normal Mixture by Simulated Annealing") +
   xlab(expression(theta)) +
   ylab("Density") +
@@ -340,17 +343,97 @@ x = c(1.2241, 0.3598, 0.4008, 0.1107, -0.5558, 1.7869, 0.4979, -1.9666, 0.7014, 
 # Your R code 
 ```
 
-## Solution:
 
-```{r, warning=FALSE, message=FALSE}
-set.seed(556)
-# sample data
-x = c(1.2241, 0.3598, 0.4008, 0.1107, -0.5558, 1.7869, 0.4979, -1.9666, 0.7014, -0.4728)
+# Solution:
+
+## Deriving the Laplace Approximation for any x:
+
+
+```{r,out.width = "100%", fig.cap = " Problem 2, Deriving",fig.show='hold'}
+knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW3/Hw32a.pdf") 
+
+```
+
+
+
+
+```{r,out.width = "70%", fig.cap = " Problem 2, Deriving",fig.show='hold'}
+knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW3/Hw32b.pdf") 
+
+```
+
+
+
+\newpage
+```{r,out.width = "70%", fig.cap = " Problem 2, Deriving",fig.show='hold'}
+knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW3/Hw32c.pdf") 
+
+```
+
+
+## Apply the approximation to the following scenario:
+
+- $\theta\sim N(0,3^2)$
+- $x|\theta\sim N(\theta, 1)$
+
+Recall that $$ f(\theta \mid x_i) = \frac{f(x \mid \theta)\pi(\theta)}{m(X)}$$
+
+where  $f(\theta \mid x_i) \propto f(x \mid \theta)\pi(\theta)$. Then this problem can look like this below;
+
+```{r}
 # use the Laplace approximation to evaluate the marginal likelihood
 # Your R code 
-n <- length(x)
 
-# Step 1: Define the log-prior, log-likelihood, and log-posterior functions
+# Given data
+x <- c(1.2241, 0.3598, 0.4008, 0.1107, -0.5558, 1.7869, 0.4979, -1.9666, 0.7014, -0.4728)
+n <- length(x)          # Sample size
+S <- sum(x)             # Sum of the data
+mean_x <- mean(x)       # Sample mean
+
+# Prior parameters
+mu_0 <- 0               # Prior mean
+tau_0_sq <- 9           # Prior variance (3^2)
+sigma_sq <- 1           # Likelihood variance
+
+# Compute posterior parameters
+tau_n_sq_inv <- (1 / tau_0_sq) + n / sigma_sq  # Inverse of posterior variance
+tau_n_sq <- 1 / tau_n_sq_inv                   # Posterior variance
+mu_n <- tau_n_sq * ((mu_0 / tau_0_sq) + (n * mean_x / sigma_sq))  # Posterior mean
+
+# Compute theta_hat (mode of the posterior)
+theta_hat <- mu_n
+
+# Compute the second derivative h''(theta_hat)
+h_dd <- - (n / sigma_sq + 1 / tau_0_sq)
+
+# Compute h(theta_hat) = log-likelihood + log-prior
+log_likelihood <- sum(dnorm(x, mean = theta_hat, sd = sqrt(sigma_sq), log = TRUE))
+
+log_prior <- dnorm(theta_hat, mean = mu_0, sd = sqrt(tau_0_sq), log = TRUE)
+
+h_theta_hat <- log_likelihood + log_prior
+
+# Compute the Gaussian integral term
+gaussian_term <- sqrt(2 * pi / (-h_dd))
+
+# Compute the marginal likelihood approximation
+m_x <- exp(h_theta_hat) * gaussian_term
+
+# Output the result
+
+
+```
+
+
+\begin{center} The marginal likelihood approximation $m(X) \approx$ `r m_x` represents the approximate probability of observing the data X under the model, integrating over all possible values of $\theta$ weighted by the prior $\pi(\theta)$.\end{center}
+
+
+
+```{r, warning=FALSE, message=FALSE,echo=FALSE, eval=FALSE}
+set.seed(556)
+### How the plot looks like under a posterior rule:
+# Lets take a look at a potential plot
+
 
 # Log-prior of theta: log(pi(theta))
 log_prior <- function(theta) {
@@ -416,59 +499,19 @@ ggplot(plot_data_melted, aes(x = theta, y = Density, color = "blue")) +
        x = expression(theta),
        y = "Density") +
   geom_vline(xintercept = theta_map, 
-             linetype = "dashed", color = "red", size = 1) +
+             linetype = "dashed", color = "blue", size = 1) +
   annotate("text", x = theta_map,
            y = max(plot_data$Posterior),
            label = sprintf("MAP = %.2f", theta_map), 
-           hjust = -0.1, color = "red") +
+           hjust = -0.1, color = "blue") +
   theme_bw()
 
 ```
 
 
 
-```{r}
-# Given data
-x <- c(1.2241, 0.3598, 0.4008, 0.1107, -0.5558, 1.7869, 0.4979, -1.9666, 0.7014, -0.4728)
-n <- length(x)          # Sample size
-S <- sum(x)             # Sum of the data
-mean_x <- mean(x)       # Sample mean
 
-# Prior parameters
-mu_0 <- 0               # Prior mean
-tau_0_sq <- 9           # Prior variance (3^2)
-sigma_sq <- 1           # Likelihood variance
 
-# Compute posterior parameters
-tau_n_sq_inv <- (1 / tau_0_sq) + n / sigma_sq  # Inverse of posterior variance
-tau_n_sq <- 1 / tau_n_sq_inv                   # Posterior variance
-mu_n <- tau_n_sq * ((mu_0 / tau_0_sq) + (n * mean_x / sigma_sq))  # Posterior mean
-
-# Compute theta_hat (mode of the posterior)
-theta_hat <- mu_n
-
-# Compute the second derivative h''(theta_hat)
-h_dd <- - (n / sigma_sq + 1 / tau_0_sq)
-
-# Compute h(theta_hat) = log-likelihood + log-prior
-log_likelihood <- sum(dnorm(x, mean = theta_hat, sd = sqrt(sigma_sq), log = TRUE))
-
-log_prior <- dnorm(theta_hat, mean = mu_0, sd = sqrt(tau_0_sq), log = TRUE)
-
-h_theta_hat <- log_likelihood + log_prior
-
-# Compute the Gaussian integral term
-gaussian_term <- sqrt(2 * pi / (-h_dd))
-
-# Compute the marginal likelihood approximation
-m_x <- exp(h_theta_hat) * gaussian_term
-
-# Output the result
-#cat("Marginal likelihood approximation:", m_x, "\n")
-
-```
-
-The marginal likelihood approximation $m(X) \approx$ `r m_x` represents the approximate probability of observing the data X under the model, integrating over all possible values of $\theta$ weighted by the prior $\pi(\theta)$.
 
 
 
@@ -476,9 +519,74 @@ The marginal likelihood approximation $m(X) \approx$ `r m_x` represents the appr
 
 In this special case, one can actually analytically solve the integral in $m(\mathbf{x})$. Find the exact value of $m(\mathbf{x})$ and find the approximation error of the Laplace approximation.
 
-## Analyticl Solution:
+## Analytical Solution:
+
+
+```{r,out.width = "90%", fig.cap = " Problem 2, Analytical",fig.show='hold'}
+knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW3/Hw32d1.pdf") 
+
+```
+
+
+
+```{r,out.width = "70%", fig.cap = " Problem 2, Analytical",fig.show='hold'}
+knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW3/Hw32d2.pdf") 
+
+```
+
+
+\newpage
+
+## Implementation:
+
 
 ```{r, warning=FALSE, message=FALSE}
+
+
+## Exact Solution
+
+tau_sq <- 0.12
+sigma_sq_n <- sigma_sq * n
+V <- tau_sq + sigma_sq_n
+
+first_term <-  sqrt(tau_sq / (tau_sq + sigma_sq_n))
+
+exp_term1 <- exp(- n*(mean_x - mu_0)^2 / (2 * V))
+
+second_term <- (1/sqrt(2 * pi * sigma_sq))^(n)
+
+SSE <- sum((x - mean_x)^2)
+
+exp_term2 <- exp(- SSE / (2 * sigma_sq))
+
+exact_mx <- first_term * exp_term1 * second_term * exp_term2
+
+## Laplace Approximation
+
+## derived above
+
+
+absolute_error = abs(m_x - exact_mx)
+relative_error = absolute_error / exact_mx
+
+
+# Output the results
+ data_result <- data.frame("Exact_value" = exact_mx,
+                           "Laplace_approx" = m_x, 
+                           "Absolute_error" =absolute_error,
+                           "Relative_error"= relative_error)
+ 
+kable(data_result, digits = 8, caption = "Analytical Solution Values")%>%
+  kable_styling(position = "center",
+              latex_options = "HOLD_position") 
+ 
+
+
+
+```
+
+
+```{r,eval=FALSE, include=FALSE, echo=FALSE}
 # Sample data
 x = c(1.2241, 0.3598, 0.4008, 0.1107, -0.5558, 1.7869, 0.4979, -1.9666, 0.7014, -0.4728)
 n = length(x)
@@ -486,47 +594,47 @@ mu0 = 0        # Prior mean
 tau2 = 9       # Prior variance
 sigma2 = 1     # Likelihood variance
 
-# Define the integrand for m(x)
-integrand <- function(theta) {
-  prior = dnorm(theta, mean = mu0, sd = sqrt(tau2))
-  likelihood = prod(dnorm(x, mean = theta, sd = sqrt(sigma2)))
-  return(prior * likelihood)
-}
+# 1. Compute the exact value of m(x) analytically
 
-# Compute the exact value of m(x)
-exact_mx = integrate(integrand, lower = -Inf, upper = Inf)$value
+# 1.1 Compute sample mean and sum of squared deviations
+x_bar = mean(x)
+sum_squares = sum((x - x_bar)^2)
 
+# 1.2 Compute each term of m(x)
+first_term = (1 / sqrt(2 * pi * sigma2))^n
+second_term = exp(-0.5 * sum_squares / sigma2)
+third_term = sqrt(tau2 / (tau2 + n * sigma2))
+fourth_term = exp(-0.5 * n * (x_bar - mu0)^2 / (tau2 + n * sigma2))
+
+# 1.3 Compute m(x)
+exact_mx = first_term * second_term * third_term * fourth_term
+
+# 2. Compute the Laplace approximation
+
+# 2.1 Compute hat_theta
 sum_x = sum(x)
 hat_theta = sum_x / (n + 1 / tau2)
 
-h_second_derivative = -n - 1 / tau2
+# 2.2 Compute h''(hat_theta)
+h_second_derivative = - (n / sigma2 + 1 / tau2)
 
-h_hat_theta = -0.5 * sum((x - hat_theta)^2) - 0.5 * (hat_theta^2) / tau2
+# 2.3 Compute h(hat_theta)
+h_hat_theta = -0.5 * sum((x - hat_theta)^2) / sigma2 - 0.5 * (hat_theta - mu0)^2 / tau2
 
-
+# 2.4 Compute the Laplace approximation
 laplace_mx = exp(h_hat_theta) * sqrt(2 * pi / (-h_second_derivative))
 
-
+# 3. Compute the approximation error
 absolute_error = abs(exact_mx - laplace_mx)
 relative_error = absolute_error / exact_mx
 
-
 # Output the results
- data_result <- data.frame("Exact value of m(x)" = exact_mx, "Laplace approximation of m(x)" = laplace_mx, "Absolute error" =absolute_error)
- 
-kable(data_result, digits = 4, caption = "Analytical Solution Values")%>%
-  kable_styling(position = "center",
-              latex_options = "HOLD_position") 
- 
-# cat("Exact value of m(x):", exact_mx, "\n")
-# cat("Laplace approximation of m(x):", laplace_mx, "\n")
-# cat("Absolute error:", absolute_error, "\n")
-# cat("Relative error:", relative_error, "\n")
-
+cat("Exact value of m(x):", exact_mx, "\n")
+cat("Laplace approximation of m(x):", laplace_mx, "\n")
+cat("Absolute error:", absolute_error, "\n")
+cat("Relative error:", relative_error, "\n")
 
 ```
-
-
 
 
 
@@ -561,6 +669,9 @@ hist(snoq,breaks=100,prob=T,main="Daily precipitation")
 # you may use the curve() function
 ```
 
+
+
+\newpage
 
 ## Solution:
 
@@ -816,8 +927,35 @@ cat(sprintf("Single Normal Log-Likelihood: %.4f\n", single_log_likelihood))
 ```
 
 
+### Derive the iterative updates in the EM algorithm for finding the MLE :
+
+```{r,out.width = "70%", fig.cap = " Problem 3, Deriving",fig.show='hold'}
+knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW3/Hw33a.pdf") 
+
+```
 
 
+
+\newpage
+
+```{r,out.width = "70%", fig.cap = " Problem 3, Deriving",fig.show='hold'}
+knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW3/Hw33b.pdf") 
+
+```
+
+
+
+
+```{r,out.width = "70%", fig.cap = " Problem 3, Deriving",fig.show='hold'}
+knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW3/Hw33c.pdf") 
+
+```
+
+
+
+\newpage
+
+### Applying Algorithm:
 
 ```{r}
 # Set seed for reproducibility
@@ -831,27 +969,32 @@ sigma1_true <- 1  # True standard deviation of component 1
 mu2_true <- 5     # True mean of component 2
 sigma2_true <- 1.5 # True standard deviation of component 2
 
-# Generate component labels based on the true mixing proportion
+# Generate latent variable based on the true mixing proportion
 z <- rbinom(n, size = 1, prob = p_true)
 
 
-# Generate data from the two normal distributions 
+# Generate data from the two normal distributions given the latent var
 
-snoq[z == 1] <- rnorm(sum(z == 1), mean = mu1_true, sd = sigma1_true)
-snoq[z == 0] <- rnorm(sum(z == 0), mean = mu2_true, sd = sigma2_true)
+snoq[z == 1] <- rnorm(sum(z == 1), mean = mu1_true, sd = sqrt(sigma1_true))
+snoq[z == 0] <- rnorm(sum(z == 0), mean = mu2_true, sd = sqrt(sigma2_true))
 
 # Plot the histogram of the data
-hist(snoq , breaks = 30, probability = TRUE, main = "Histogram of Snoqualmie Data", 
+hist(snoq , breaks = 30, probability = TRUE, main = "Histogram 
+     of Snoqualmie Data with Latent Variable", 
      xlab = "x", ylab = "Density",
      col = "lightgray")
+
+
+
+
 
 
 # Set simple initial parameters
 p <- 0.5                             
 mu1 <- quantile(snoq , probs = 0.25)     
 mu2 <- quantile(snoq , probs = 0.75)     
-sigma1 <- sd(snoq )                      
-sigma2 <- sd(snoq )                      
+sigma1 <- var(snoq)                      
+sigma2 <- var(snoq)                      
 
 ```
 
@@ -871,8 +1014,8 @@ log_likelihood <- numeric(max_iter)  # Store log-likelihoods
 for (iter in 1:max_iter) {
   ### E-step 
   # Compute responsibilities (gamma_i)
-  tau1 <- p * dnorm_vectorized(snoq, mu1, sigma1)        # Numerator for component 1
-  tau2 <- (1 - p) * dnorm_vectorized(snoq, mu2, sigma2)  # Numerator for component 2
+  tau1 <- p * dnorm_vectorized(snoq, mu1, sqrt(sigma1))        # Numerator for component 1
+  tau2 <- (1 - p) * dnorm_vectorized(snoq, mu2, sqrt(sigma2))  # Numerator for component 2
   denom <- tau1 + tau2                                # Denominator
   gamma <- tau1 / denom                               # Responsibility for component 1
   
@@ -881,8 +1024,8 @@ for (iter in 1:max_iter) {
 p_new <- mean(gamma)
 mu1_new <- sum(gamma * snoq) / sum(gamma)
 mu2_new <- sum((1 - gamma) * snoq) / sum(1 - gamma)
-sigma1_new <- sqrt(sum(gamma * (snoq - mu1_new)^2) / sum(gamma))
-sigma2_new <- sqrt(sum((1 - gamma) * (snoq - mu2_new)^2) / sum(1 - gamma))
+sigma1_new <- (sum(gamma * (snoq - mu1_new)^2) / sum(gamma))
+sigma2_new <- (sum((1 - gamma) * (snoq - mu2_new)^2) / sum(1 - gamma))
   
   # Compute log-likelihood
   log_likelihood[iter] <- sum(log(denom))
@@ -906,22 +1049,21 @@ log_likelihood <- log_likelihood[1:iter]
 
 # Output the estimated parameters
 # Output result table
-result_data <- data.frame("Mixing Probability" = p,"Mean of component 1 (mu1)" = mu1, "Standard deviation of component 1 (sigma1)" = sigma1, "Mean of component 2 (mu2)" = mu2,"Standard deviation of component 2 (sigma2)" = sigma2)
+result_data <- data.frame("Mix_Prob" = p,
+                          "Mu_1" = mu1,
+                          "Var1" = sigma1,
+                          "Mu_2" = mu2,
+                          "Var2" = sigma2)
 
 
 kable(result_data, digits = 4, caption = "Estimated Parameters")%>%
   kable_styling(position = "center",
               latex_options = "HOLD_position")
-# cat("Estimated Parameters:\n")
-# cat("Mixing proportion (p):", round(p, 4), "\n")
-# cat("Mean of component 1 (mu1):", round(mu1, 4), "\n")
-# cat("Standard deviation of component 1 (sigma1):", round(sigma1, 4), "\n")
-# cat("Mean of component 2 (mu2):", round(mu2, 4), "\n")
-# cat("Standard deviation of component 2 (sigma2):", round(sigma2, 4), "\n")
+
 
 ```
 
-## plot
+## Plotting the problem
 
 ```{r, eval=FALSE,include=FALSE,echo=FALSE}
 # Plot the histogram
@@ -958,10 +1100,10 @@ x_seq <- seq(min(snoq), max(snoq), length.out = 1000)
 # Compute the estimated densities
 estdensity_data <- data.frame(
   x = x_seq,
-  Mixture = p * dnorm(x_seq, mean = mu1, sd = sigma1) +
-    (1 - p) * dnorm(x_seq, mean = mu2, sd = sigma2),
-  Component1 = p * dnorm(x_seq, mean = mu1, sd = sigma1),
-  Component2 = (1 - p) * dnorm(x_seq, mean = mu2, sd = sigma2)
+  Mixture = p * dnorm(x_seq, mean = mu1, sd = sqrt(sigma1)) +
+    (1 - p) * dnorm(x_seq, mean = mu2, sd = sqrt(sigma2)),
+  Component1 = p * dnorm(x_seq, mean = mu1, sd = sqrt(sigma1)),
+  Component2 = (1 - p) * dnorm(x_seq, mean = mu2, sd = sqrt(sigma2))
 )
 
 
@@ -999,7 +1141,7 @@ ggplot() +
 ```
 
 
-## Convergence
+## Convergence Plot:
 
 
 ```{r, eval=FALSE, message=FALSE, include=FALSE, echo=FALSE}
@@ -1010,7 +1152,7 @@ plot(1:iter, log_likelihood, type = "b", xlab = "Iteration", ylab = "Log-Likelih
 ```
 
 ```{r, warning=FALSE, message=FALSE}
-## New convergence plot
+## convergence plot
 
 # Data frame for log-likelihood
 loglik_data <- data.frame(
