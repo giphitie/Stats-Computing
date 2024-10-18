@@ -1,0 +1,23 @@
+---
+title: "Final Project"
+author: "Gifty Osei"
+date: "2024-10-18"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Project Proposal
+
+- Description
+- Questions to answer
+- Data set
+- Statistical Computing Methods
+- Enough details
+
+- Describe research motivation, data source and structure and justify variables and statistical models to be used.
+
+

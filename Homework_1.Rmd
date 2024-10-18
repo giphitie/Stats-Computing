@@ -34,8 +34,8 @@ Establish the theoretical validity of the method by proving the following result
 
 ```{r, out.width = "60%", fig.cap = " Problem 1, Question 1", message=FALSE, warning=FALSE, echo=TRUE,fig.show='hold'}
 
-knitr::include_graphics(c("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q1.pdf",
-                          "D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q1b.pdf")) 
+knitr::include_graphics(c("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW2/Q1.pdf",
+                          "D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW2/Q1b.pdf")) 
 
 ```
 
@@ -50,8 +50,8 @@ knitr::include_graphics(c("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homew
 
 ```{r, out.width = "60%", fig.cap = " Problem 1, Question 2", message=FALSE, warning=FALSE, echo=T,fig.show='hold'}
 
-knitr::include_graphics(c("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q1c.pdf",
-                          "D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q1d.pdf")) 
+knitr::include_graphics(c("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW2/Q1c.pdf",
+                          "D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW2/Q1d.pdf")) 
 
 ```
 
@@ -70,7 +70,7 @@ The Cauchy distribution is Student's $t$-distribution with 1 degree of freedom.
 
 ```{r , out.width = "60%", fig.cap = " Problem 2, Question 1", message=FALSE, warning=FALSE, echo=TRUE,fig.show='hold'}
 
-knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q2a.pdf") 
+knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW2/Q2a.pdf") 
 
 ```
 
@@ -82,7 +82,7 @@ knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homewor
 
 ```{r , out.width = "60%", fig.cap = " Problem 2, Question 2", message=FALSE, warning=FALSE, echo=TRUE,fig.show='hold'}
 
-knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q2b.pdf") 
+knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW2/Q2b.pdf") 
 
 ```
 
@@ -214,7 +214,7 @@ ggplot() +
             linetype = "dashed", alpha = 0.5) +
   geom_line(data =  empirical_cdfs$ratio,
             aes(x = x, y = cdf), color = "green",
-            size = 1, linetype = "dotted", alpha = 0.5) +   # Restrict x-axis range
+            size = 1, linetype = "dotted", alpha = 0.5) + # Restrict x-axis range
   xlim(-10, 10) +
     ggtitle("Comparison of Simulated Cauchy Distribution CDFs")+
     xlab("x")+
@@ -260,7 +260,7 @@ Consider simulating from $N(0,1)$ using the accept-reject sampling. Pretend you 
 
 ```{r , out.width = "60%", fig.cap = " Problem 3, Question 1", message=FALSE, warning=FALSE, echo=TRUE,fig.show='hold'}
 
-knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q3a.pdf") 
+knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW2/Q3a.pdf") 
 
 ```
 
@@ -273,7 +273,7 @@ knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homewor
 
 ```{r , out.width = "60%", fig.cap = " Problem 3 Question 2", message=FALSE, warning=FALSE, echo=TRUE,fig.show='hold'}
 
-knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q3b.pdf") 
+knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW2/Q3b.pdf") 
 
 ```
 
@@ -327,7 +327,7 @@ acceptance_rate <- mean(accepted)
 
 ```{r , out.width = "55%", fig.cap = " Problem 3, Question 3", message=FALSE, warning=FALSE, echo=TRUE,fig.show='hold'}
 
-knitr::include_graphics(c("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q3c.pdf","D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q3d.pdf" ))
+knitr::include_graphics(c("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW2/Q3c.pdf","D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW2/Q3d.pdf" ))
 
 ```
 
@@ -352,7 +352,7 @@ cat("The value of σ that solves the equation is approximately:", root, "\n")
 
 ```{r label, out.width = "85%", fig.cap = "caption", eval=FALSE, echo=FALSE}
 
-knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5071_AdvLinearModel/Homework/HW2/Q1.pdf") 
+knitr::include_graphics("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Homework/HW2/Q1.pdf") 
 
 ```
 
