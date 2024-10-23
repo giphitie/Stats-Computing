@@ -83,3 +83,90 @@ rbind(theta.hat,se)
 
 ```
 
+## Antithetic Variable
+```{r}
+## Example 1
+
+N = 1000
+g = function(t) {log(1+log(1-t)^2)}
+T = runif(N); X = g(T)
+c(mean(X), sd(X))
+## [1] 0.6456271 0.7345544
+T = runif(N/2)
+X = (g(T) + g(1-T))/2;c(mean(X), sd(X))
+
+
+## Example 2
+N = 1000; U = matrix(runif(2*N),ncol=2)
+f = function(x){prod(x)^2*sin(sum(x))*log(sum(x))}
+X = pi^2*apply(pi*U/4,1,f)/16
+c(mean(X), sd(X))
+## [1] 0.003939554 0.012559836
+U = matrix(runif(N),ncol=2)
+X = pi^2*((apply(pi*U/4,1,f)+apply(pi*(1-U)/4,1,f))/2)/16
+c(mean(X), sd(X))
+```
+
+
+## Control Variates
+
+```{r}
+## Example 1
+N = 1000; U = runif(N); X = exp(U);
+c(mean(X), sd(X), 2*sd(X)/sqrt(N))
+## [1] 1.71381259 0.48303059 0.03054954
+Y = U; muY = 1/2; Xb = mean(X); Yb = mean(Y);
+cs = -sum( (X-Xb)*(Y-Yb) )/sum( (Y-Yb)^2 );
+Z = X + cs*( Y - muY );
+c(mean(Z), sd(Z), 2*sd(Z)/sqrt(N))
+
+## Example 2
+
+N = 1000; U = runif(N); X = 2*exp(-(2*U)^2);
+c(mean(X), sd(X), 2*sd(X)/sqrt(N))
+## [1] 0.85427898 0.68687148 0.04344157
+Y = 2*exp(-2*U); muY = 1 - exp(-2);
+Xb = mean(X); Yb = mean(Y);
+cs = -sum( (X-Xb)*(Y-Yb) )/sum( (Y-Yb)^2 );
+Z = X + cs*( Y - muY );
+c(mean(Z), sd(Z), 2*sd(Z)/sqrt(N))
+
+
+## Example 3
+N = 1000; U = matrix(runif(2*N),ncol=2)
+f = function(x){prod(x)^2*sin(sum(x))*log(sum(x))}
+X = pi^2*apply(pi*U/4,1,f)/16; Xb=mean(X)
+c(mean(X), sd(X), 2*sd(X)/sqrt(N))
+## [1] 0.004319502 0.013949818 0.000882264
+g = function(x) { prod(x)^2 }
+Y = pi^2*apply(pi*U/4,1,g)/16; Yb = mean(Y)
+cs = -sum( (X-Xb)*(Y-Yb) )/sum( (Y-Yb)^2 );
+muY = (pi/4)^6/9; Z = X + cs*( Y - muY );
+c(mean(Z), sd(Z), 2*sd(Z)/sqrt(N))
+```
+
+## Asian Stock Price
+```{r}
+S0 = 50; K = 50; M = 16; T = 1; dlt = T/M;
+r = 0.05; s = 0.1; rd = ( r - s^2/2 )*dlt;
+N = 10000; Z = matrix(rnorm(M*N),ncol=M);
+S = matrix(0,ncol=M,nrow=N)
+X = Y = rep(0,N)
+d = ( log(S0/K) + (r+s^2/6)*T/2 )/(s*sqrt(T/3));
+for (j in 1:N){
+S[j,] = S0*exp(cumsum(rd + s*sqrt(dlt)*Z[j,]))
+X[j] = exp(-r*T)*max( mean(S[j,])-K, 0 );
+Y[j] = exp(-r*T)*max((S0*prod(S[j,]))^(1/(M+1))-K,0);
+}
+c(mean(X), sd(X), 2*sd(X)/sqrt(N))
+
+
+
+Xb = mean(X); Yb = mean(Y);
+cs = -sum( (X-Xb)*(Y-Yb) )/sum( (Y-Yb)^2 );
+muY = exp(-r*T)*(S0*exp((r-s^2/6)*T/2)*pnorm(d)-K*pnorm(d-s*sqrt(T/3)) );
+Z = X + cs*( Y - muY );
+c(mean(Z), sd(Z), 2*sd(Z)/sqrt(N))
+```
+
+

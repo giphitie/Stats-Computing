@@ -21,3 +21,40 @@ knitr::opts_chunk$set(echo = TRUE)
 - Describe research motivation, data source and structure and justify variables and statistical models to be used.
 
 
+Predicting Mental Health Disorders Among Students Using Bayesian Methods and Monte Carlo Simulations
+
+Building predictive models for mental health outcomes (depression, anxiety, and panic attacks) among students based on demographic and academic factors. The secondary objective understanding how various factors (e.g, gender, year) correlate with these mental health conditions
+
+
+ ## Dataset Description
+ 
+The dataset include these variables;
+ - Demographic information : Gender, Age, Marital Status
+ - Academic Factors: Course, current year of study, CGPA
+ - Mental health Outcomes: Depression, anxiety, panic attacks
+ - Treatment-seeking behavior : Whether student sought a specialist.
+ 
+ 
+The predictors are a mix of categorical (gender, course, marital status), ordinal (year), continuous (CGPA), and binary outcomes (mental conditions).
+
+
+## Statistical Methods
+
+ * Exploratory Data Analysis
+  - Descriptive Statistical Summary and Visualization (Histogram and Bar plots, Correlation Analysis)
+  
+ * Monte Carlo Simulation for Simulated Data
+ 
+ * Mixture Models for Clustering
+  - Using Mixture of Multivariate Normals to cluster students
+  
+ * Bayesian Inference and Laplace Approximation
+  - Posterior Distribution
+  - Laplace to approximate the posterior distribution
+
+ * Monte Carlo Optimization
+
+ * EM Algorithm for missing Data
+ 
+ 
+This project will allow to leverage a variety of statistical computing methods, offering a solid framework for analysis and valuable insights into mental health among students
