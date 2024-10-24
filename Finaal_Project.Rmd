@@ -7,6 +7,8 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
 ```
 
 
@@ -58,3 +60,69 @@ The predictors are a mix of categorical (gender, course, marital status), ordina
  
  
 This project will allow to leverage a variety of statistical computing methods, offering a solid framework for analysis and valuable insights into mental health among students
+
+## Explore interesting structure
+
+```{r}
+Data_all <- read.csv("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Final_Project/Big_Cities_Health_Data_Inventory.csv")%>% mutate(Gender = as.factor(Gender), Race..Ethnicity = as.factor(Race..Ethnicity), Indicator.Category = as.factor(Indicator.Category), Indicator = as.factor(Indicator), Value = as.numeric(Value),Place = as.factor(Place)) 
+
+# Year  =  as.numeric(Year)-2010
+```
+
+
+
+```{r}
+Data <- read.csv("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Final_Project/Big_Cities_Health_Data_Inventory.csv") %>% filter(Indicator == "All Types of Cancer Mortality Rate (Age-Adjusted; Per 100,000 people)")%>% mutate(Gender = as.factor(Gender), Race..Ethnicity = as.factor(Race..Ethnicity), Indicator.Category = as.factor(Indicator.Category), Indicator = as.factor(Indicator), Year = as.numeric(Year), Value = as.numeric(Value),Place = as.factor(Place)) 
+```
+
+```{r}
+Data1 <- read.csv("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Final_Project/Big_Cities_Health_Data_Inventory.csv") %>% filter(Indicator == "All-Cause Mortality Rate (Age-Adjusted; Per 100,000 people)")%>% mutate(Gender = as.factor(Gender), Race..Ethnicity = as.factor(Race..Ethnicity), Indicator.Category = as.factor(Indicator.Category), Indicator = as.factor(Indicator), Year = as.numeric(Year), Value = as.numeric(Value),Place = as.factor(Place)) 
+```
+
+
+```{r}
+
+# Histogram with density plot
+ggplot(data = Data) +
+  geom_histogram(aes(x = Value, y = ..density..), bins = 30, fill = 'skyblue', alpha = 0.5) +
+  theme_bw()
+
+ggplot(data = Data1) +
+  geom_histogram(aes(x = Value, y = ..density..), bins = 30, fill = 'skyblue', alpha = 0.5) +
+  theme_bw()
+
+Data_all$Value <- log(Data_all$Value)
+
+ggplot(data = Data_all) +
+  geom_histogram(aes(x = Value, y = ..density..), bins = 100, fill = 'skyblue', alpha = 0.5) +
+  theme_bw()
+
+
+ggplot(data = Data_all, aes(x = Year, y = Value, color = Gender))+
+  geom_point(alpha = 0.3)  + xlab("Year Starting from 2010")+
+  ylab("Value") + ggtitle("Relationship Between Year and Response Value")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=8))
+
+```
+
+## Table
+```{r}
+table(Data_all$Indicator.Category)
+```
+
+
+This shows that analysis on the entire data will be challenging, so do in groups
+## Clustering Assessment
+```{r}
+# K-means clustering
+
+kmeans_result <- kmeans(Data_all$Value, centers = 100)
+data$cluster <- as.factor(kmeans_result$cluster)
+
+# Visualize clusters
+ggplot(data, aes(x = var1, y = var2, color = cluster)) +
+  geom_point() +
+  theme_minimal()
+
+```
+
