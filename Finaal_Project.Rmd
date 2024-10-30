@@ -1,7 +1,7 @@
 ---
-title: "Final Project"
+title: "Project Proposal"
 author: "Gifty Osei"
-date: "2024-10-18"
+date: "`r Sys.Date()`"
 output: pdf_document
 ---
 
@@ -9,111 +9,592 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(ggplot2)
+library(gridExtra)
+library(tidyr)
+library(kableExtra)
 ```
 
 
-## Project Proposal
+#  Unveiling Temporal Health Patterns: A Bayesian MCMC and Clustering Approach to Health Indicators
 
-- Description
-- Questions to answer
-- Data set
-- Statistical Computing Methods
-- Enough details
+```{r, eval=FALSE, include=FALSE, echo=FALSE}
+#- Description
+#- Questions to answer
+#- Data set
+#- Statistical Computing Methods
+#- Enough details
 
-- Describe research motivation, data source and structure and justify variables and statistical models to be used.
+#- Describe research motivation, data source and structure and justify variables and statistical models to be used.
 
-
-Predicting Mental Health Disorders Among Students Using Bayesian Methods and Monte Carlo Simulations
-
-Building predictive models for mental health outcomes (depression, anxiety, and panic attacks) among students based on demographic and academic factors. The secondary objective understanding how various factors (e.g, gender, year) correlate with these mental health conditions
+```
 
 
- ## Dataset Description
+
+
+
+## Motivation
+
+Health disparities between demographics and geographic areas remain a major public health concern. Understanding how different health indicators change over time by gender, race/ethnicity, and geography is critical for making informed policy decisions and effectively directing interventions. The goal of this project is to examine a large dataset comprising a variety of health indicators in order to discover underlying patterns, trends, and clusters. We use advanced statistical computing approaches such as Bayesian modeling with Markov Chain Monte Carlo (MCMC), longitudinal analysis, and clustering techniques to provide insights into the dynamics of health indicators and overcome difficulties such as missing data. The ultimate goal is to allow the data to disclose intrinsic structures and relationships, which will contribute to a better understanding of public health dynamics.
+
+
+
+
+## Questions:
+
+In this project we will explore and answer the following questions;
+
+ * How does a Bayesian modeling technique using MCMC improve knowledge on the rate of occurrence for some health indicators considering demographic conditions?
+
+ * What are the temporal patterns or trends in health indicators throughout different years?
  
-The dataset include these variables;
- - Demographic information : Gender, Age, Marital Status
- - Academic Factors: Course, current year of study, CGPA
- - Mental health Outcomes: Depression, anxiety, panic attacks
- - Treatment-seeking behavior : Whether student sought a specialist.
+ * How do health indicators differ based on gender and race/ethnicity?
  
+ * Can we discover clusters of areas with similar health indicators?
  
-The predictors are a mix of categorical (gender, course, marital status), ordinal (year), continuous (CGPA), and binary outcomes (mental conditions).
+ * How can we manage missing information in the 'Gender' category?
+
+
+
+
+```{r, eval=FALSE, echo=FALSE, include=FALSE}
+# How does Bayesian inference differ from typical statistical methods in this context?
+
+# What are the posterior distributions for the parameters of interest?
+# How do the values of health indicators change with time?
+# Have there been notable increases or declines in specific indicators?
+
+# What is the difference in health indicator values between genders?
+#  How do different racial and ethnic groupings compare on these indicators?
+# How many natural clusters exist in the data when it comes to health indicators?
+# What demographic and geographical variables distinguish these clusters?
+
+# Do cyclical patterns or trends occur over time?
+# How are these patterns related to external forces or events?
+# Which imputation approaches can be used to estimate missing gender data?
+# How does missing data affect the overall analysis and results?
+
+```
+
+
+
+## Dataset Description
+ 
+The dataset consists of records of numerous health indicators that were gathered in many places over several years. A description of each variable is as follows;
+
+ - Indicator Category: The broad category that a health indicator belongs under, such as cancer, substance abuse, and HIV/AIDS.
+ 
+ - Indicator: The particular health metrics or results (e.g., Lung and heart cancer, Infant mortality rate, heart disease).
+ 
+ - Year: The year when the health indicator was measured or the data was gathered.
+ 
+ - Gender: The population group's gender (either male, female, or Both).
+ 
+ - Race and Ethnicity: The population's race or ethnicity (e.g., White, Black, Hispanic).
+ 
+ - Value: The dependent variable in our study, which is the health indicator's rate per 100,000 persons.
+ 
+ - Place (Location): The geographical area (in this case large cities in the US) where the data was gathered.
+ 
+ - BCHC Requested Methodology: The Big Cities Health Coalition's (BCHC) specific methods requested for gathering or analyzing the data.
+ 
+ - Source: Where the data came from (e.g., Census, hospital records, National Center for Health Statistics (NCHS) and CDC reports).
+ 
+ - Methods: The techniques employed to gather or calculate the values of the health indicators.
+ 
+ - Notes: Extra details or observations on the data points.
+ 
 
 
 ## Statistical Methods
 
+With "Value" as the dependent variable, we will use a number of sophisticated statistical computing techniques to answer the research questions and accomplish the project's goals. Methods like;
+
  * Exploratory Data Analysis
+ 
   - Descriptive Statistical Summary and Visualization (Histogram and Bar plots, Correlation Analysis)
   
- * Monte Carlo Simulation for Simulated Data
+ * Bayesian Model with Markov Chain Monte Carlo (MCMC): Utilize MCMC techniques to sample from the posterior distributions, such as Metropolis-Hastings and Gibbs sampling..
  
- * Mixture Models for Clustering
-  - Using Mixture of Multivariate Normals to cluster students
+ * Longitudinal Analysis (Dynamics Across Year) : examines how the "Value" changes over time within the same entities (e.g., locations).
   
- * Bayesian Inference and Laplace Approximation
-  - Posterior Distribution
-  - Laplace to approximate the posterior distribution
+  
+ * Model based Clustering: By using clustering analysis, data points are grouped so that they are more comparable to one another inside the same cluster than to those in other clusters.
 
- * Monte Carlo Optimization
 
- * EM Algorithm for missing Data
+ * EM Algorithm for missing Data: 
  
  
-This project will allow to leverage a variety of statistical computing methods, offering a solid framework for analysis and valuable insights into mental health among students
+This project will allow to leverage a variety of statistical computing methods, offering a solid framework for analysis and valuable insights into some health indicator rate among large cities in the US.
 
-## Explore interesting structure
 
-```{r}
-Data_all <- read.csv("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Final_Project/Big_Cities_Health_Data_Inventory.csv")%>% mutate(Gender = as.factor(Gender), Race..Ethnicity = as.factor(Race..Ethnicity), Indicator.Category = as.factor(Indicator.Category), Indicator = as.factor(Indicator), Value = as.numeric(Value),Place = as.factor(Place)) 
+## Load Data 
 
-# Year  =  as.numeric(Year)-2010
+```{r,echo=FALSE, include=FALSE, eval=FALSE}
+
+## Original values
+
+Data_all <- read.csv("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Final_Project/Big_Cities_Health_Data_Inventory.csv")%>% mutate(Gender = as.factor(Gender), Race..Ethnicity = as.factor(Race..Ethnicity), Indicator.Category = as.factor(Indicator.Category), Indicator = as.factor(Indicator), Value = as.numeric(Value),Place = as.factor(Place))%>% dplyr::select(-BCHC.Requested.Methodology,-Source, -Methods, -Notes)
+
+## Transformed Value
+
+Data_all_trans <- read.csv("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Final_Project/Big_Cities_Health_Data_Inventory.csv")%>% mutate(Gender = as.factor(Gender), Race..Ethnicity = as.factor(Race..Ethnicity), Indicator.Category = as.factor(Indicator.Category), Indicator = as.factor(Indicator), Value = as.numeric(log(Value)),Place = as.factor(Place)) %>% dplyr::select(-BCHC.Requested.Methodology,-Source, -Methods, -Notes) 
+
+## removing year ranges 
+
+all_Data <- subset(Data_all, !grepl("-", Year))
+
+all_Data_trans <- subset(Data_all_trans, !grepl("-", Year))
 ```
 
 
 
-```{r}
-Data <- read.csv("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Final_Project/Big_Cities_Health_Data_Inventory.csv") %>% filter(Indicator == "All Types of Cancer Mortality Rate (Age-Adjusted; Per 100,000 people)")%>% mutate(Gender = as.factor(Gender), Race..Ethnicity = as.factor(Race..Ethnicity), Indicator.Category = as.factor(Indicator.Category), Indicator = as.factor(Indicator), Year = as.numeric(Year), Value = as.numeric(Value),Place = as.factor(Place)) 
+## Select by Health Indicator
+
+```{r,echo=FALSE, include=FALSE, eval=FALSE}
+Data <- read.csv("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Final_Project/Big_Cities_Health_Data_Inventory.csv") %>% filter(Indicator == "All Types of Cancer Mortality Rate (Age-Adjusted; Per 100,000 people)")%>% mutate(Gender = as.factor(Gender), Race..Ethnicity = as.factor(Race..Ethnicity), Indicator.Category = as.factor(Indicator.Category), Indicator = as.factor(Indicator), Year = as.numeric(Year), Value = as.numeric(Value),Place = as.factor(Place)) %>% dplyr::select(-BCHC.Requested.Methodology,-Source, -Methods, -Notes)
+
+
+
+## Transformed
+
+Data_trans <- read.csv("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Final_Project/Big_Cities_Health_Data_Inventory.csv") %>% filter(Indicator == "All Types of Cancer Mortality Rate (Age-Adjusted; Per 100,000 people)")%>% mutate(Gender = as.factor(Gender), Race..Ethnicity = as.factor(Race..Ethnicity), Indicator.Category = as.factor(Indicator.Category), Indicator = as.factor(Indicator), Year = as.numeric(Year), Value = as.numeric(log(Value)),Place = as.factor(Place)) %>% dplyr::select(-BCHC.Requested.Methodology,-Source, -Methods, -Notes)
+
+## removing year ranges 
+
+all_Data1 <- subset(Data, !grepl("-", Year))
+
+all_Data1_trans <- subset(Data_trans, !grepl("-", Year))
+
 ```
 
-```{r}
-Data1 <- read.csv("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Final_Project/Big_Cities_Health_Data_Inventory.csv") %>% filter(Indicator == "All-Cause Mortality Rate (Age-Adjusted; Per 100,000 people)")%>% mutate(Gender = as.factor(Gender), Race..Ethnicity = as.factor(Race..Ethnicity), Indicator.Category = as.factor(Indicator.Category), Indicator = as.factor(Indicator), Year = as.numeric(Year), Value = as.numeric(Value),Place = as.factor(Place)) 
+
+
+
+```{r,echo=FALSE, include=FALSE, eval=FALSE}
+Data1 <- read.csv("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Final_Project/Big_Cities_Health_Data_Inventory.csv") %>% filter(Indicator == "All-Cause Mortality Rate (Age-Adjusted; Per 100,000 people)")%>% mutate(Gender = as.factor(Gender), Race..Ethnicity = as.factor(Race..Ethnicity), Indicator.Category = as.factor(Indicator.Category), Indicator = as.factor(Indicator), Year = as.numeric(Year), Value = as.numeric(log(Value)),Place = as.factor(Place)) %>% dplyr::select(-BCHC.Requested.Methodology,-Source, -Methods, -Notes) 
 ```
 
 
-```{r}
+```{r,echo=FALSE, include=FALSE, eval=FALSE}
 
 # Histogram with density plot
-ggplot(data = Data) +
+fig1 <- ggplot(data = Data) +
   geom_histogram(aes(x = Value, y = ..density..), bins = 30, fill = 'skyblue', alpha = 0.5) +
   theme_bw()
 
-ggplot(data = Data1) +
+fig2 <- ggplot(data = Data1) +
   geom_histogram(aes(x = Value, y = ..density..), bins = 30, fill = 'skyblue', alpha = 0.5) +
   theme_bw()
 
 Data_all$Value <- log(Data_all$Value)
 
-ggplot(data = Data_all) +
+fig3 <- ggplot(data = Data_all) +
   geom_histogram(aes(x = Value, y = ..density..), bins = 100, fill = 'skyblue', alpha = 0.5) +
   theme_bw()
 
 
-ggplot(data = Data_all, aes(x = Year, y = Value, color = Gender))+
+fig4 <- ggplot(data = Data_all, aes(x = Year, y = Value, color = Gender))+
   geom_point(alpha = 0.3)  + xlab("Year Starting from 2010")+
   ylab("Value") + ggtitle("Relationship Between Year and Response Value")+
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size=8))
 
+
+grid.arrange(fig1,fig2,fig3,fig4, nrow = 4)
+
 ```
 
-## Table
+
 ```{r}
+## Year and Value
+fig5 <- ggplot(data = all_Data, aes(x = Year, y = Value, color = Gender))+
+  geom_boxplot(alpha = 0.3)  + xlab("Year Starting from 2010")+
+  ylab("Value") + ggtitle("Relationship Between Year and Response Value")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=8))
+
+## adjust the year
+```
+
+
+## susetting all data by Health Indicator
+
+```{r}
+data_1 <- Data_all  %>% filter(Indicator.Category == "Infectious Disease")
+data_2 <- Data_all  %>% filter(Indicator.Category == "Injury and Violence")
+data_3 <- Data_all  %>% filter(Indicator.Category == "HIV/AIDS")
+data_4 <- Data_all  %>% filter(Indicator.Category == "Nutrition, Physical Activity, & Obesity")
+
+# mean(is.na(Data$Gender))
+
+```
+
+
+
+
+## Plots
+
+```{r}
+ggplot(data = data_3, aes(x = Year, y = Value, color = Gender))+
+  geom_point(alpha = 0.3)  + xlab("Year Starting from 2010")+
+  ylab("Value") + ggtitle("Relationship Between Year and Response Value")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=8))
+```
+
+
+## Exploring Trends
+
+### Yearly trends
+
+```{r}
+
+# Aggregate the data to get mean Value per Year
+yearly_trends <- all_Data1 %>%
+  group_by(Year) %>%
+  summarise(mean_value = mean(Value, na.rm = TRUE))
+
+# View the aggregated data
+print(yearly_trends)
+
+
+```
+
+
+```{r}
+
+# Plot mean Value over Years
+ggplot(yearly_trends, aes(x = Year, y = mean_value)) +
+  geom_line(color = "blue") +
+  geom_point(color = "red") +
+  labs(title = "Temporal Trend of Health Indicator Values",
+       x = "Year",
+       y = "Mean Value (per 100,000 people)") +
+  theme_minimal()
+
+
+```
+
+
+## Trend by Gender
+
+```{r}
+# Filter out missing Gender data
+data_gender <- all_Data1 %>%
+  filter(!is.na(Gender) & Gender != "")
+
+# Aggregate data by Year and Gender
+yearly_gender_trends <- data_gender %>%
+  group_by(Year, Gender) %>%
+  summarise(mean_value = mean(Value, na.rm = TRUE))
+
+# View the aggregated data
+print(yearly_gender_trends)
+
+```
+
+
+
+```{r}
+# Plot mean Value over Years by Gender
+ggplot(yearly_gender_trends, aes(x = Year, y = mean_value, color = Gender, group = Gender)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Temporal Trend of Health Indicator Values by Gender",
+       x = "Year",
+       y = "Mean Value (per 100,000 people)",
+       color = "Gender") +
+  theme_minimal()
+
+```
+
+## Trends by Race
+
+```{r}
+# Filter out missing Race/Ethnicity data
+data_race <- all_Data1 %>%
+  filter(!is.na(Race..Ethnicity) & Race..Ethnicity != "")
+
+# Aggregate data by Year and Race/Ethnicity
+yearly_race_trends <- data_race%>%
+  group_by(Year, Race..Ethnicity) %>%
+  summarise(mean_value = mean(Value, na.rm = TRUE))
+
+# View the aggregated data
+print(yearly_race_trends)
+
+
+```
+
+
+```{r}
+# Plot mean Value over Years by Race/Ethnicity
+ggplot(yearly_race_trends, aes(x = Year, y = mean_value, color = Race..Ethnicity, group = Race..Ethnicity)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Temporal Trend of Health Indicator Values by Race/Ethnicity",
+       x = "Year",
+       y = "Mean Value (per 100,000 people)",
+       color = "Race/Ethnicity") +
+  theme_minimal()
+
+```
+
+## Trends by Place
+
+```{r}
+# Aggregate data by Year and Place
+yearly_place_trends <- all_Data1 %>%
+  group_by(Year, Place) %>%
+  summarise(mean_value = mean(Value, na.rm = TRUE))
+
+# View the aggregated data
+print(yearly_place_trends)
+
+```
+
+
+```{r}
+# Select top 5 Places with the most data points
+top_places <- all_Data1 %>%
+  group_by(Place) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  slice(1:5) %>%
+  pull(Place)
+
+# Filter data for top Places
+top_places_data <- yearly_place_trends %>%
+  filter(Place %in% top_places)
+
+# Plot mean Value over Years for top Places
+ggplot(top_places_data, aes(x = Year, y = mean_value, color = Place, group = Place)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Temporal Trend of Health Indicator Values for Top Places",
+       x = "Year",
+       y = "Mean Value (per 100,000 people)",
+       color = "Place") +
+  theme_minimal()
+
+```
+
+
+```{r, echo=FALSE, include=FALSE, eval=FALSE}
 table(Data_all$Indicator.Category)
 ```
 
 
 This shows that analysis on the entire data will be challenging, so do in groups
-## Clustering Assessment
+
+## EM Algorithm For Missing Gender in certain Years
+
 ```{r}
+
+## Load Data again
+
+health_data <- read.csv("D:/WashU/First Year/Sem1/SDS5531_StatsComputing/Final_Project/Big_Health_data.csv", stringsAsFactors = FALSE) %>% dplyr::select(-BCHC.Requested.Methodology,-Source, -Methods, -Notes) 
+
+
+
+# health indicator and years of interest
+indicator_of_interest <- "All Types of Cancer Mortality Rate (Age-Adjusted; Per 100,000 people)"
+
+years_of_interest <- c(2010, 2011, 2012, 2013, 2014,2015)
+
+# Filter the dataset
+data_subset <- health_data %>%
+  filter(Indicator == indicator_of_interest,
+         Year %in% years_of_interest)
+
+
+# The number missing data in Gender Column
+sum(is.na(data_subset$Gender) | data_subset$Gender == "")
+
+
+
+```
+
+```{r}
+
+# Separate observed and missing Gender data
+observed_data <- data_subset %>%
+  filter(!is.na(Gender) & Gender != "")
+
+## Latent
+missing_data <- data_subset %>%
+  filter(is.na(Gender) | Gender == "")
+
+# Initialize parameters using observed data
+initial_means <- observed_data %>%
+  group_by(Gender) %>%
+  summarise(mean_value = mean(Value, na.rm = TRUE))
+
+# Initial variance estimate
+initial_variance <- var(observed_data$Value, na.rm = TRUE)
+
+# Initialize parameters
+mu_male <- initial_means$mean_value[initial_means$Gender == "Male"]
+mu_female <- initial_means$mean_value[initial_means$Gender == "Female"]
+mu_both <- initial_means$mean_value[initial_means$Gender == "Both"]
+sigma2 <- initial_variance
+
+```
+
+
+## EM Loop 
+```{r}
+# Stopping Criterion parameters
+epsilon <- 1e-6
+max_iter <- 1000
+log_likelihood_old <- -Inf
+
+
+
+# Initialize iteration counter
+iter <- 0
+converged <- FALSE
+
+# Store log-likelihoods 
+log_likelihoods <- c()
+
+# EM Algorithm
+while (!converged && iter < max_iter) {
+  iter <- iter + 1
+  
+  # E-step: Compute posterior probabilities for missing Gender
+  # For each missing data point, calculate P(Gender = g | Y_i, current parameters)
+  
+  # Get current parameters
+  params <- list(
+    mu_male = mu_male,
+    mu_female = mu_female,
+    mu_both = mu_both,
+    sigma2 = sigma2
+  )
+  
+  # Calculate the likelihoods for each Gender category
+  likelihoods <- sapply(c("Male", "Female", "Both"), function(g) {
+    mu_g <- params[[paste0("mu_", tolower(g))]]
+    dnorm(missing_data$Value, mean = mu_g, sd = sqrt(sigma2))
+  })
+  
+  # Convert likelihoods to probabilities
+  # Assuming equal prior probabilities for Genders
+  posterior_probs <- likelihoods / rowSums(likelihoods)
+  
+  # M-step: Update parameters using observed data and expected counts from E-step
+  
+  # Combine observed data and missing data with estimated Gender probabilities
+  # For observed data, the Gender is known
+  observed_data$Gender_numeric <- observed_data$Gender
+  observed_data$Male <- as.numeric(observed_data$Gender == "Male")
+  observed_data$Female <- as.numeric(observed_data$Gender == "Female")
+  observed_data$Both <- as.numeric(observed_data$Gender == "Both")
+  
+  # For missing data, use posterior probabilities
+  missing_data$Male <- posterior_probs[, "Male"]
+  missing_data$Female <- posterior_probs[, "Female"]
+  missing_data$Both <- posterior_probs[, "Both"]
+  
+  # Combine datasets
+  combined_data <- rbind(
+    observed_data %>% select(Value, Male, Female, Both),
+    missing_data %>% select(Value, Male, Female, Both)
+  )
+  
+  # Update means
+  mu_male_new <- sum(combined_data$Male * combined_data$Value) / sum(combined_data$Male)
+  mu_female_new <- sum(combined_data$Female * combined_data$Value) / sum(combined_data$Female)
+  mu_both_new <- sum(combined_data$Both * combined_data$Value) / sum(combined_data$Both)
+  
+  # Update variance
+  residuals_squared <- combined_data$Male * (combined_data$Value - mu_male_new)^2 +
+                       combined_data$Female * (combined_data$Value - mu_female_new)^2 +
+                       combined_data$Both * (combined_data$Value - mu_both_new)^2
+  sigma2_new <- sum(residuals_squared) / nrow(combined_data)
+  
+  # Compute log-likelihood
+  log_likelihood_new <- sum(
+    combined_data$Male * dnorm(combined_data$Value, mean = mu_male_new, sd = sqrt(sigma2_new), log = TRUE) +
+    combined_data$Female * dnorm(combined_data$Value, mean = mu_female_new, sd = sqrt(sigma2_new), log = TRUE) +
+    combined_data$Both * dnorm(combined_data$Value, mean = mu_both_new, sd = sqrt(sigma2_new), log = TRUE)
+  )
+  
+  # Store log-likelihood for plotting
+  log_likelihoods <- c(log_likelihoods, log_likelihood_new)
+  
+  # Check for convergence
+  if (abs(log_likelihood_new - log_likelihood_old) < epsilon) {
+    converged <- TRUE
+  } else {
+    # Update parameters for next iteration
+    mu_male <- mu_male_new
+    mu_female <- mu_female_new
+    mu_both <- mu_both_new
+    sigma2 <- sigma2_new
+    log_likelihood_old <- log_likelihood_new
+  }
+  
+  
+
+  
+
+}
+
+
+
+## Plot of Convergence
+
+plot(log_likelihoods, type = "o", col = "blue",
+     xlab = "Iteration", ylab = "Log-likelihood",
+     main = "EM Algorithm Convergence")
+
+
+# Final parameter estimates
+
+Missing_Gender_result <- data.frame(
+  " mu_male" = mu_male_new,
+  "mu_female" = mu_female_new,
+  "mu_both" = mu_both_new,
+  "sigma2" = sigma2_new,
+  "log_like_old" = log_likelihood_new
+)
+
+
+kable(Missing_Gender_result, digits = 8, caption = "Estimated Parameters")%>%
+  kable_styling(position = "center",
+              latex_options = "HOLD_position")
+
+
+## Plugging in estimate into data
+
+# For missing data, assign Gender based on highest posterior probability
+missing_data$Gender_estimated <- apply(posterior_probs, 1, function(x) {
+  genders <- c("Male", "Female", "Both")
+  genders[which.max(x)]
+})
+
+# Combine observed and missing data
+final_data <- rbind(
+  observed_data %>% select(-Male, -Female, -Both, -Gender_numeric),
+  missing_data %>% select(-Male, -Female, -Both, - Gender_estimated)
+)
+
+# # Update the Gender column for missing data
+# final_data$Gender[is.na(final_data$Gender) | final_data$Gender == ""] <-
+#   final_data$Gender_estimated[is.na(final_data$Gender) | final_data$Gender == ""]
+
+# View the updated data
+head(final_data)
+
+
+## write out algorithm in words
+
+```
+
+
+
+
+# Clustering
+```{r, echo=FALSE, include=FALSE, eval=FALSE}
 # K-means clustering
 
 kmeans_result <- kmeans(Data_all$Value, centers = 100)
